@@ -52,8 +52,8 @@ model. It's also the seam for swapping in a different model or backend.
 
 **MLX is imported lazily**, inside `MlxVlmTranscriber` methods rather than at
 module scope. `--no-transcribe` runs and the entire test suite therefore never
-load MLX. This is also why `mlx-vlm` is a reasonable candidate for an optional
-install extra rather than a hard dependency.
+load MLX. This is also what lets `mlx-vlm` be the optional `[transcribe]` extra
+rather than a hard dependency, so the base install runs on any platform.
 
 **`HF_HOME` is set before any Hugging Face or MLX import**, at the top of
 `transcribe.py`, defaulting to `~/Local-Models` via `_default_hf_home()`. The
@@ -107,13 +107,11 @@ The VLM itself has no unit test by design: its output is non-deterministic and i
 needs a large model. Instead there's an **opt-in eval** (`tests/test_vlm_eval.py`,
 marked `vlm`, deselected by default) that runs the real model on the fixture through
 the whole pipeline and asserts *tolerant* properties — non-empty output plus a few
-clearly-printed anchors — rather than an exact transcription. Its specific job is to
-catch the resolution cliff below, whose signature is a silently empty (embed-only)
-`.md`. It skips when the model isn't cached: the model is a large optional artifact,
-unlike the always-present fixture, so it skips rather than failing loud.
+clearly-printed anchors — rather than an exact transcription. It guards the resolution
+cliff below, whose signature is a silently empty (embed-only) `.md`, and skips when the
+model isn't cached.
 
-Beyond the eval, the VLM is verified by running it and reading the result — which
-is how the resolution cliff above was found.
+Beyond the eval, the VLM is verified by running it and reading the result.
 
 ## Regenerating the diagram
 

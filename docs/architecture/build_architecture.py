@@ -440,9 +440,9 @@ mlx = box(
     240,
     70,
     "<b>mlx-vlm</b><br>"
-    + sub("third-party · Apple Silicon")
+    + sub("optional [transcribe] extra")
     + "<br>"
-    + desc("Qwen3-VL by default"),
+    + desc("Apple Silicon · Qwen3-VL by default"),
     fill=COLOR_EXTERNAL_SLATE,
     fill_dark=COLOR_EXTERNAL_SLATE_DARK,
     fontColor_dark="#11181c",

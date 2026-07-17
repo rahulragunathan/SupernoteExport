@@ -4,6 +4,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+
+# Packaging build artifacts
+/dist/
+/build/
+*.egg-info/
 # Ignore stray personal notes dropped in fixtures, but ship the one committed
 # sample the integration tests depend on.
 tests/fixtures/*.note

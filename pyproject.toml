@@ -1,8 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "supernote-export"
 version = "0.1.0"
 description = "Convert Supernote .note files into Obsidian-ready PDFs and transcribed Markdown, locally."
+readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Rahul Ragunathan" }]
+keywords = ["supernote", "obsidian", "handwriting", "ocr", "mlx", "note"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = [
+    "supernotelib>=0.6.0",
+    "Pillow>=10.0.0",
+]
+
+# Transcription needs the Metal-only MLX stack, so it's optional: `pip install
+# supernote-export` gives PDF-only conversion on any platform; `[transcribe]`
+# opts into the VLM. Mirrors the lazy MLX import that keeps --no-transcribe and
+# the default test suite model-free.
+[project.optional-dependencies]
+transcribe = ["mlx-vlm>=0.1.12"]
+dev = ["pytest>=8.0.0", "ruff>=0.6.0"]
+
+[project.scripts]
+supernote-export = "supernote_export.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/supernote_export"]
 
 [tool.ruff]
 line-length = 100

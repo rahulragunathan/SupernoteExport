@@ -14,7 +14,7 @@ Repo renamed `SupernoteSync` → `SupernoteExport`; package renamed to match
 removed (`HF_HOME` default via `Path.home()`, test path via `SUPERNOTE_TEST_NOTE`);
 `ARCHITECTURE.md` added with a generated diagram.
 
-**Phase 3 — Committed test fixture + VLM eval: in progress** (`feature/fixture-note`).
+**Phase 3 — Committed test fixture + VLM eval: done** (merged, PR #2).
 A disposable sample note (`tests/fixtures/20260717_012708.note`) is committed and the
 integration tests point at it directly. `SUPERNOTE_TEST_NOTE` is **removed**: with a
 real note in the repo, an env var whose only accepted value must match the fixture's
@@ -25,6 +25,14 @@ is to catch the empty-output resolution cliff, the one silent failure this proje
 actually hit. First eval run on the fixture: near-perfect transcription, including the
 deliberately-sloppy block; only layout/spatial fidelity (columns, an annotation arrow)
 is lost, which is expected for linear Markdown.
+
+**Phase 4 — Packaging + MIT license + public: implemented** (`feature/packaging-and-license`).
+Moved to a `src/` layout; added a hatchling `[build-system]`, single-sourced dependencies
+in `pyproject.toml` (with `requirements*.txt` as thin `-e .` pointers), a `[transcribe]`
+extra gating the Metal-only `mlx-vlm`, a `supernote-export` console script, and an MIT
+`LICENSE`. `pip install "git+https://…"` works; `python -m build` produces a clean
+package-only wheel. The repo is made public (owner performs the GitHub visibility flip at
+merge), which is what makes those `git+https://…` installs resolve for others.
 
 ## Confidence check (least-confident areas)
 
@@ -43,14 +51,6 @@ is lost, which is expected for linear Markdown.
 
 ## Planned / unscheduled enhancements
 
-- **Packaging for install-from-GitHub** — `pyproject.toml` currently declares
-  `[project]` metadata but **no `[build-system]`**, so nothing builds or installs; the
-  package imports only via pytest's rootdir `sys.path` insertion. To make
-  `pip install git+ssh://…` work: add a `[build-system]` table, declare runtime
-  dependencies in `[project.dependencies]` (single-sourced, with `requirements.txt`
-  reduced to `-e .`), add a `[project.scripts]` console entry point, and add a LICENSE
-  (there is none — without one the repo is "all rights reserved" and legally
-  un-installable by others even if public).
 - **Per-page structure in the `.md`** — optional page headers/markers instead of a bare
   `---` separator, if the user wants page-addressable notes.
 - **`max_pixels` control** — expose the VLM processor's pixel cap for small-text pages,
@@ -69,7 +69,6 @@ is lost, which is expected for linear Markdown.
   Dropbox) is slow, since files download on demand. A slow folder run is input I/O, not a
   conversion bug — conversion itself is ~1 s/note.
 - Python 3.14 unsupported (dependency wheels); pinned to 3.13.
-- PySN intentionally not used; supernotelib covers all conversion needs.
 
 ## Review findings (end-of-phase)
 
