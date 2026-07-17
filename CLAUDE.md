@@ -50,14 +50,21 @@ it (then the `drawio` skill's `validate.py` + `render_png.py`); never hand-edit 
 
 - Deterministic layers (`naming`, `discover`, `writer`, `pipeline`) are unit/integration
   tested. Write a failing test first (TDD).
-- The `pipeline` integration test uses a **real sample `.note`** plus a **fake
-  `Transcriber`** — so `supernotelib` is exercised for real but no model is needed. The
-  note's path comes from **`SUPERNOTE_TEST_NOTE`**, which is *required*: unset or bad, the
-  tests fail rather than skip, so this coverage can't vanish silently. It currently must
-  point at `20250817_132236.note` specifically — the tests assert that sample's stem
-  (`2025-08-17`) and page count (3). Replacing it with a committed fixture is in ROADMAP.
-- The VLM layer has no unit test by design; verify by running it and eyeballing output.
-- Before hand-off: `pytest` green, `ruff format .`, `ruff check .`.
+- The `pipeline` integration test converts a **committed sample `.note`**
+  (`tests/fixtures/20260717_012708.note`) through real `supernotelib`, faking only the
+  `Transcriber` — so the conversion boundary is exercised with no model and no setup. The
+  tests assert that fixture's properties: a `2026-07-17` output stem (its timestamp name
+  exercises `naming.py`'s date conversion) and its 3-page count. If you swap the fixture,
+  update `SAMPLE_STEM`/`SAMPLE_PAGES` in `test_pipeline.py` and the `.gitignore` negation.
+- The VLM layer has no unit test by design. It's covered by an **opt-in eval**
+  (`tests/test_vlm_eval.py`, marked `vlm`, deselected by default via `addopts` in
+  pyproject.toml). Run it with `pytest -m vlm`; it loads the real model, so it
+  *skips* when the model isn't cached — the mirror of the fixture test's fail-loud,
+  since the model is huge and optional while the fixture is cheap and guaranteed.
+  Assertions are tolerant (non-empty + a few printed anchors), guarding the empty-
+  output resolution cliff without pinning exact VLM text.
+- Before hand-off: `pytest` green, `ruff format .`, `ruff check .`. (The `vlm` eval
+  is separate and manual — not part of the default gate.)
 
 ## Gotchas
 

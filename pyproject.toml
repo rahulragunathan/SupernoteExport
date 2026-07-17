@@ -10,3 +10,10 @@ target-version = "py310"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The `vlm` eval loads the real multi-gigabyte model, so it's deselected by
+# default — the everyday suite stays fast, deterministic, and model-free.
+# Run it explicitly with `pytest -m vlm` (a CLI -m overrides this default).
+addopts = "-m 'not vlm'"
+markers = [
+    "vlm: opt-in eval that runs real MLX-VLM transcription; needs the model cached",
+]

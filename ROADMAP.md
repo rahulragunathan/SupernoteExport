@@ -8,11 +8,23 @@ mirrored subfolder output. Suite green: deterministic layers unit-tested, plus a
 real-`.note` integration test. (No test count here on purpose — nothing verifies it, and
 a hand-maintained number goes stale silently.)
 
-**Phase 2 — Post-rename cleanup: in progress** (`feature/cleanup-post-rename`).
+**Phase 2 — Post-rename cleanup: done** (merged, PR #1).
 Repo renamed `SupernoteSync` → `SupernoteExport`; package renamed to match
-(`supernote_export`, CLI `python -m supernote_export`); the integration test's
-hardcoded personal Drive path replaced by the required `SUPERNOTE_TEST_NOTE`
-environment variable.
+(`supernote_export`, CLI `python -m supernote_export`); machine-specific hardcoding
+removed (`HF_HOME` default via `Path.home()`, test path via `SUPERNOTE_TEST_NOTE`);
+`ARCHITECTURE.md` added with a generated diagram.
+
+**Phase 3 — Committed test fixture + VLM eval: in progress** (`feature/fixture-note`).
+A disposable sample note (`tests/fixtures/20260717_012708.note`) is committed and the
+integration tests point at it directly. `SUPERNOTE_TEST_NOTE` is **removed**: with a
+real note in the repo, an env var whose only accepted value must match the fixture's
+asserted stem and page count was a trap, not a knob. The default suite now runs with no
+setup. The fixture also enables an **opt-in VLM eval** (`pytest -m vlm`, deselected by
+default) that runs the real model end-to-end and asserts tolerant properties — its job
+is to catch the empty-output resolution cliff, the one silent failure this project has
+actually hit. First eval run on the fixture: near-perfect transcription, including the
+deliberately-sloppy block; only layout/spatial fidelity (columns, an annotation arrow)
+is lost, which is expected for linear Markdown.
 
 ## Confidence check (least-confident areas)
 
@@ -31,15 +43,6 @@ environment variable.
 
 ## Planned / unscheduled enhancements
 
-- **Committed fixture note (supersedes `SUPERNOTE_TEST_NOTE`)** — a small, disposable
-  note authored on the Supernote itself, committed under `tests/fixtures/`. Then the
-  suite runs anywhere with no environment setup, and the test's note-specific
-  assertions (`2025-08-17` stem, 3 pages) become stable properties of a fixture the
-  repo owns. `SUPERNOTE_TEST_NOTE` then degrades to an optional override rather than a
-  requirement. *A synthesized `.note` is explicitly rejected:* supernotelib's
-  `reconstruct()` is debug-only and building a `Notebook` from scratch is unsupported,
-  so a fabricated fixture would only prove supernotelib agrees with itself — it could
-  not catch the real-device format regressions this test exists to catch.
 - **Packaging for install-from-GitHub** — `pyproject.toml` currently declares
   `[project]` metadata but **no `[build-system]`**, so nothing builds or installs; the
   package imports only via pytest's rootdir `sys.path` insertion. To make
@@ -97,10 +100,10 @@ test's note-specific assertions, and the absent packaging config. Neither is a r
 
 ### Confidence check — least confident areas
 
-1. **The `SUPERNOTE_TEST_NOTE` contract is weaker than it looks.** It reads as "point me
-   at a note" but the tests assert one specific sample's stem and page count, so any
-   other note fails with a confusing assertion error rather than a clear message. It's
-   documented in three places now, which is a smell: the fixture note supersedes it.
+1. **~~The `SUPERNOTE_TEST_NOTE` contract is weaker than it looks.~~** *Resolved in
+   Phase 3:* the env var was removed in favour of a committed fixture the tests point at
+   directly. The stem/page-count assertions are now honest — they describe a file the
+   repo owns, not a hidden constraint on an env var's value.
 2. **~~Hardcoded counts in prose go stale silently.~~** *Resolved in-phase:* the ROADMAP
    test-count claim drifted twice in one session, so the number was removed rather than
    reset. Watch for the same pattern in other hand-maintained figures.
