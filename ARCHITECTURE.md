@@ -96,15 +96,23 @@ renderer runs.
 The deterministic layers (`discover`, `naming`, `writer`, `convert`'s downscaler,
 `transcribe`'s fence-stripper and `HF_HOME` default) are unit-tested.
 
-`pipeline` has an integration test that converts a **real `.note`** through real
-`supernotelib` while faking only the `Transcriber`. The sample lives outside the
-repo and its path comes from the required `SUPERNOTE_TEST_NOTE` environment
-variable — unset, the tests fail rather than skip, so the only coverage of the
-real `supernotelib` boundary can't disappear unnoticed. See
-[ROADMAP.md](ROADMAP.md) for the plan to replace it with a committed fixture.
+`pipeline` has an integration test that converts a **committed sample `.note`**
+(`tests/fixtures/20260717_012708.note`) through real `supernotelib` while faking
+only the `Transcriber`. Shipping the fixture means this coverage of the real
+`supernotelib` boundary runs anywhere, with no setup — and the fixture's timestamp
+name doubles as coverage of `naming.py`'s date conversion. A `.gitignore` negation
+commits just this one sample while blocking any other `.note` from the fixtures dir.
 
 The VLM itself has no unit test by design: its output is non-deterministic and it
-needs a large model. It's verified by running it and reading the result — which
+needs a large model. Instead there's an **opt-in eval** (`tests/test_vlm_eval.py`,
+marked `vlm`, deselected by default) that runs the real model on the fixture through
+the whole pipeline and asserts *tolerant* properties — non-empty output plus a few
+clearly-printed anchors — rather than an exact transcription. Its specific job is to
+catch the resolution cliff below, whose signature is a silently empty (embed-only)
+`.md`. It skips when the model isn't cached: the model is a large optional artifact,
+unlike the always-present fixture, so it skips rather than failing loud.
+
+Beyond the eval, the VLM is verified by running it and reading the result — which
 is how the resolution cliff above was found.
 
 ## Regenerating the diagram

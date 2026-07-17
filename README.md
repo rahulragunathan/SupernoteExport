@@ -87,23 +87,21 @@ The default is tuned for messy handwriting + layout. Lighter/faster swaps:
 ## Development
 
 ```bash
-# Required: the integration tests convert a real .note, which isn't shipped here.
-export SUPERNOTE_TEST_NOTE="/path/to/20250817_132236.note"
-
 pytest            # deterministic layers + the real-.note integration tests
 ruff format . && ruff check .
+
+pytest -m vlm     # opt-in: real transcription of the fixture (needs the model)
 ```
 
-`SUPERNOTE_TEST_NOTE` is **required, not optional**. If it's unset or points at a
-missing file, the integration tests *fail* rather than skip — they are the only
-coverage of the real `supernotelib` boundary, so a silent skip would quietly
-reduce the suite to mocks-testing-mocks.
+No setup needed for the default suite — the integration tests convert a committed
+sample note (`tests/fixtures/20260717_012708.note`) through real `supernotelib`, so
+the conversion boundary is genuinely exercised anywhere the repo is checked out. The
+sample is disposable and carries no personal content; a `.gitignore` rule keeps any
+*other* `.note` dropped in `tests/fixtures/` from being committed by accident.
 
-> **Note:** the integration tests currently assert this specific sample's
-> properties (a `2025-08-17` output stem and a 3-page count), so the variable has
-> to point at `20250817_132236.note` in particular — any other note fails on those
-> assertions. Replacing it with a small committed fixture note is tracked in
-> [ROADMAP.md](ROADMAP.md).
-
-The VLM boundary is a `Transcriber` protocol, so tests inject a fake and never
-require the model. The transcription itself is verified manually (see the plan).
+The VLM boundary is a `Transcriber` protocol, so the default tests inject a fake and
+never load the model. The real model is covered by an **opt-in eval** (`pytest -m
+vlm`, deselected by default) that transcribes the fixture and asserts the output is
+non-empty and carries a few clearly-printed anchors — tolerant checks that guard the
+image-resolution cliff (see [ARCHITECTURE.md](ARCHITECTURE.md)) without pinning an
+exact transcription. It skips automatically if the model isn't cached.

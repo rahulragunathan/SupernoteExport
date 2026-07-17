@@ -4,4 +4,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+# Ignore stray personal notes dropped in fixtures, but ship the one committed
+# sample the integration tests depend on.
 tests/fixtures/*.note
+!tests/fixtures/20260717_012708.note
