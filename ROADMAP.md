@@ -26,7 +26,7 @@ Milestones and their completion; PR reference for anything Done.
   Metal-only `mlx-vlm`; `supernote-export` console script; MIT `LICENSE`.
   `pip install "git+https://…"` works; `python -m build` produces a clean
   package-only wheel.
-- **Phase 5 — Output & progress knobs: Done** (PR #4).
+- **Phase 5 — Output & progress knobs: Done** (PR #5).
   `--page-markers {none,line-break,page-numbers}` (replaces `--page-separators`;
   `page-numbers` emits `## Page N` headers keyed to true source pages via the new
   pure `assemble_transcription`). Per-note progress lines to stderr via a
@@ -86,7 +86,7 @@ introduced by the phase itself, not a logic defect. All fixed in-branch:
   at directly — the assertions now describe a file the repo owns, and no setup is
   needed.
 
-### PR #4 — page markers, processor pixel cap, progress
+### PR #5 — page markers, progress, max_pixels investigation
 
 Delivered three Enhancement items in one phase:
 
@@ -130,10 +130,10 @@ Least-confident areas and open risks.
 - **mlx-vlm API stability.** `generate`/`apply_chat_template` signatures were pinned
   against installed 0.6.5. A future upgrade could shift them; the transcriber is small
   and isolated, so a break is contained to `transcribe.py`. (We do **not** rely on
-  `load(**kwargs)` forwarding processor args — PR #4 found that path silently discards
+  `load(**kwargs)` forwarding processor args — PR #5 found that path silently discards
   `max_pixels`, which is why the pixel cap is a pre-render downscale in `convert.py`.)
 - **The 1.5M pixel cap is empirical and default-model-specific.** It guards the
-  Qwen3-VL empty-generation cliff and can't be derived from model metadata (PR #4).
+  Qwen3-VL empty-generation cliff and can't be derived from model metadata (PR #5).
   A different `--model` may have a different safe ceiling; there's no runtime check
   that the chosen cap is safe for the chosen model — the `vlm` eval covers only the
   default model, and only when cached. Silent empty output on an untested model+cap
