@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -11,6 +12,10 @@ from .discover import discover_notes
 from .naming import plan_output_names
 from .transcribe import Transcriber
 from .writer import build_markdown, write_note_outputs
+
+# Called once per note as the batch progresses: (index, total, note_path, status),
+# where status is "convert" (before the slow work) or "skip" (output already exists).
+ProgressCallback = Callable[[int, int, Path, str], None]
 
 
 @dataclass
@@ -30,26 +35,35 @@ def run(
     pdf_mode: str = "raster",
     max_pixels: int = DEFAULT_MAX_PIXELS,
     overwrite: bool = False,
+    on_progress: ProgressCallback | None = None,
 ) -> Summary:
     """Convert every note under ``input_path`` into ``output_root``.
 
     Notes whose ``.md`` already exists are skipped unless ``overwrite``. A single
     failing note is recorded and the batch continues. Transcription runs only when
-    a ``transcriber`` is supplied.
+    a ``transcriber`` is supplied. ``on_progress``, if given, is called once per note
+    (see ``ProgressCallback``) — before the slow conversion, so a caller can show a
+    live per-note line during long batches.
     """
     output_root = Path(output_root)
     vectorize = pdf_mode == "vector"
 
     notes = discover_notes(input_path)
     planned = plan_output_names([(note, output_root / subdir) for note, subdir in notes])
+    total = len(planned)
 
     summary = Summary()
-    for note_path, out_dir, name in planned:
+    for index, (note_path, out_dir, name) in enumerate(planned, start=1):
         md_path = out_dir / f"{name}.md"
         try:
             if md_path.exists() and not overwrite:
+                if on_progress is not None:
+                    on_progress(index, total, note_path, "skip")
                 summary.skipped.append(md_path)
                 continue
+
+            if on_progress is not None:
+                on_progress(index, total, note_path, "convert")
 
             pdf_bytes = convert.note_to_pdf(note_path, vectorize=vectorize)
 
