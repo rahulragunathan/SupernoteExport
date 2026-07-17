@@ -35,14 +35,16 @@ pytestmark = pytest.mark.vlm
 SAMPLE_NOTE = Path(__file__).parent / "fixtures" / "20260717_012708.note"
 SAMPLE_STEM = "2026-07-17"
 
-# Clearly-printed text spanning both non-blank pages, stable across model versions.
+# Clearly-printed words from pages 1-2, stable across model versions. Matched
+# case-insensitively (see below): the anchors' *presence* is the signal, while
+# capitalization of ambiguous handwriting is drift the eval should tolerate.
 # Deliberately excludes the sloppy-handwriting line and layout-dependent bits (the
 # table, columns), which are exactly what *should* be allowed to drift.
 EXPECTED_ANCHORS = [
     "Introduction",  # page 1 heading
-    "Magna carta",  # page 1 numbered list
+    "Magna Carta",  # page 1 numbered list
     "Declaration of Independence",  # page 1 numbered list
-    "Green peppers",  # page 2 toppings
+    "Green Peppers",  # page 2 toppings
     "Black Olives",  # page 2 toppings
 ]
 
@@ -80,5 +82,6 @@ def test_vlm_transcription_is_nonempty_and_carries_expected_content(tmp_path):
         "transcription was empty (embed-only .md) — the image-resolution cliff"
     )
 
-    missing = [anchor for anchor in EXPECTED_ANCHORS if anchor not in md]
+    lowered = md.lower()  # tolerate capitalization drift on ambiguous handwriting
+    missing = [anchor for anchor in EXPECTED_ANCHORS if anchor.lower() not in lowered]
     assert not missing, f"transcription is missing clearly-printed content: {missing}"

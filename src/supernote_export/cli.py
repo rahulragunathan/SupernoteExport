@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .convert import DEFAULT_MAX_PIXELS
 from .pipeline import Summary, run
-from .transcribe import DEFAULT_MODEL
+from .transcribe import DEFAULT_MODEL, PAGE_MARKER_CHOICES
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,11 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
         "well under ~2M.",
     )
     parser.add_argument(
-        "--page-separators",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Insert a '---' rule between pages in the transcription (default: off, "
-        "just a blank line). Use --page-separators to add the rule.",
+        "--page-markers",
+        choices=PAGE_MARKER_CHOICES,
+        default="none",
+        help="How to separate pages in the transcription: 'none' (blank line, "
+        "default), 'line-break' ('---' rule), or 'page-numbers' ('## Page N' "
+        "headers, addressable and aligned to the PDF's page numbers).",
     )
     parser.add_argument(
         "--no-transcribe",
@@ -66,6 +67,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Re-convert notes even if their .md already exists (default: skip).",
     )
     return parser
+
+
+def _print_progress(current: int, total: int, note_path: Path, status: str) -> None:
+    """Emit one per-note progress line to stderr as the batch runs."""
+    verb = "Skipping" if status == "skip" else "Converting"
+    suffix = " (exists)" if status == "skip" else ""
+    print(f"[{current}/{total}] {verb} {note_path.name}{suffix}", file=sys.stderr)
 
 
 def _print_summary(summary: Summary) -> None:
@@ -85,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         # Imported lazily so --no-transcribe runs never load MLX.
         from .transcribe import MlxVlmTranscriber
 
-        transcriber = MlxVlmTranscriber(model=args.model, page_separators=args.page_separators)
+        transcriber = MlxVlmTranscriber(model=args.model, page_markers=args.page_markers)
 
     summary = run(
         args.input,
@@ -94,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         pdf_mode=args.pdf_mode,
         max_pixels=args.max_pixels,
         overwrite=args.overwrite,
+        on_progress=_print_progress,
     )
     _print_summary(summary)
     return 1 if summary.failed else 0

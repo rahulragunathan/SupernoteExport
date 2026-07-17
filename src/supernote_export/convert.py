@@ -18,9 +18,18 @@ from supernotelib import converter
 ALL_PAGES = -1
 
 # Native Supernote pages render at ~4.9M pixels (1920x2560). Above ~2M pixels the
-# Qwen3-VL vision stack intermittently collapses to an empty generation, so page
-# images are capped well below that boundary before reaching the model. See the
-# scale sweep in ROADMAP.md / the plan for the measured threshold.
+# Qwen3-VL vision stack intermittently collapses to an *empty* generation, so page
+# images are downscaled well below that boundary before reaching the model. This is a
+# model-agnostic pre-render cap (any VLM receives an already-safe image), independent
+# of the model's own processor internals.
+#
+# The default (1.5M) is a *hard-coded conservative constant*, not derived from model
+# metadata — and deliberately so: the cliff is an undocumented quirk whose safe point
+# sits BELOW everything the model advertises. Measured on a failing page: reliable
+# ≤1.77M px, empty ≥2.0M px (the model's config declares 16.7M, and its
+# num_position_embeddings math implies ~2.36M — both produce empty output). See
+# ROADMAP.md. Do not raise the default near 2M; other models are tuned via
+# ``--max-pixels``.
 DEFAULT_MAX_PIXELS = 1_500_000
 
 

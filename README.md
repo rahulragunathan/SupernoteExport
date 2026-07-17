@@ -82,13 +82,16 @@ supernote-export --input note.note --output ./out
 | `--output` | *(required)* | Output root; input subfolder tree is mirrored under it. |
 | `--model` | `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit` | MLX-VLM model for transcription. |
 | `--pdf-mode` | `raster` | `raster` (pixel-exact) or `vector` (traced/scalable). |
-| `--max-pixels` | `1500000` | Cap on page-image pixels fed to the VLM. The default is tuned for reliable transcription; see [ARCHITECTURE.md](ARCHITECTURE.md) before raising it. |
-| `--page-separators` / `--no-page-separators` | off | Put a `---` rule between pages (vs. just a blank line). |
+| `--max-pixels` | `1500000` | Cap on page-image pixels fed to the VLM (pages are downscaled to fit before transcription). The default is tuned for reliable transcription; see [ARCHITECTURE.md](ARCHITECTURE.md) before raising it. |
+| `--page-markers` | `none` | Page separation in the transcription: `none` (blank line), `line-break` (`---` rule), or `page-numbers` (`## Page N` headers, aligned to the PDF's page numbers). |
 | `--no-transcribe` | off | PDF only; the `.md` holds just the embed (fast, no model). |
 | `--overwrite` | off | Re-convert even if the `.md` exists (default: skip → idempotent). |
 
 **Output naming.** A timestamp stem (`20250817_132236.note`) becomes `2025-08-17`;
 a note you renamed on-device keeps its name. Same-date collisions get `-2`, `-3`.
+
+**Progress.** During a run, a per-note line (`[3/12] Converting …`) is printed to
+stderr as each note is processed, followed by the final summary.
 
 ### Alternative models
 

@@ -12,8 +12,10 @@ A local CLI that converts Supernote `.note` files into an Obsidian-ready **PDF**
 
 - `discover.py` — `--input` (file/folder) → sorted `(note_path, relative_subdir)`.
 - `naming.py` — timestamp→date vs. verbatim stem; deterministic `-2/-3` collision suffixing.
-- `convert.py` — `supernotelib` wrapper: `note_to_pdf` + `note_to_page_images`.
-- `transcribe.py` — `Transcriber` protocol + `MlxVlmTranscriber` (MLX-VLM). Sets
+- `convert.py` — `supernotelib` wrapper: `note_to_pdf` + `note_to_page_images`
+  (pre-render downscale to `--max-pixels`); owns `DEFAULT_MAX_PIXELS`.
+- `transcribe.py` — `Transcriber` protocol + `MlxVlmTranscriber` (MLX-VLM) +
+  `assemble_transcription` (pure page-joining, deterministically tested). Sets
   `HF_HOME` at import; imports MLX lazily inside methods.
 - `writer.py` — `build_markdown` (transcription on top, embed at bottom) + `write_note_outputs`.
 - `pipeline.py` — orchestrates discover → convert → transcribe → write; per-note
@@ -48,6 +50,14 @@ here in CLAUDE.md.
 - **Naming is deterministic and filesystem-independent** — reproducible across runs
   so `--overwrite` and skip-on-rerun stay stable. Sort notes before naming.
 - **One bad note must not abort a batch** — `pipeline.run` catches per-note.
+- **The VLM pixel cap is a pre-render downscale in `convert.py`**, applied before any
+  model processor sees the image — model-agnostic on purpose (see the gotcha below).
+  Do **not** move it into the transcriber via the processor's own `max_pixels`: that
+  was tried and silently failed (mlx-vlm rebuilds the image processor and discards the
+  kwarg; and it's Qwen-processor-specific anyway).
+- **Page numbering is true-source.** `assemble_transcription` keys `## Page N` headers
+  to the 1-based source index; blank pages are dropped but their number is consumed, so
+  headers stay aligned to the PDF's pages (a gap, never a renumber).
 
 ## Environment
 
@@ -72,8 +82,9 @@ here in CLAUDE.md.
 
 ## Testing
 
-- Deterministic layers (`naming`, `discover`, `writer`, `pipeline`) are unit/integration
-  tested. Write a failing test first (TDD).
+- Deterministic layers (`naming`, `discover`, `writer`, `pipeline`, `convert`,
+  `assemble_transcription`, `cli` parser/printer) are unit/integration tested. Write a
+  failing test first (TDD).
 - The `pipeline` integration test converts a **committed sample `.note`**
   (`tests/fixtures/20260717_012708.note`) through real `supernotelib`, faking only the
   `Transcriber` — so the conversion boundary is exercised with no model and no setup. The
@@ -100,6 +111,13 @@ here in CLAUDE.md.
   don't reach for PySN when extending `convert.py`.
 - **VLM image cap is load-bearing, not cosmetic.** Native page render is 1920×2560
   (~4.9M px). Above ~2M px, Qwen3-VL intermittently emits an *empty* generation
-  (immediate EOS) — this silently produced embed-only `.md` files. `note_to_page_images`
-  downscales to `--max-pixels` (default 1.5M); measured safe ≤1.77M, broken ≥2.76M. Do
-  not raise the default near 2M. The archival PDF is rendered separately at full res.
+  (immediate EOS) — this silently produces embed-only `.md` files. `note_to_page_images`
+  downscales (LANCZOS) to `--max-pixels` (default 1.5M) *before* the model; measured
+  safe ≤1.77M, empty ≥2.0M on a failing page. Do not raise the default near 2M. The
+  default is a **hard-coded conservative constant, not model-derived** — the cliff is
+  undocumented and sits below every capacity the model advertises (`size.longest_edge`
+  = 16.7M and `num_position_embeddings`-math = 2.36M both produce empty output; see
+  ROADMAP). The `vlm` eval's non-empty assertion is the re-validation gate, but note it
+  can pass intermittently at oversized caps — trust the `note_to_page_images` cap test
+  (deterministic) as the primary guard. The archival PDF is rendered separately at full
+  res.

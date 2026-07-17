@@ -23,10 +23,11 @@ source:
 | Page images | `supernotelib.ImageConverter` | Downscaled to `--max-pixels` (default 1.5M) | The VLM, which transcribes them |
 
 **The two paths never meet.** The VLM never reads the PDF, and the PDF is never
-downscaled. This is what lets the transcription be lossy-but-useful while the
-embedded PDF stays pixel-exact: any transcription error is one glance away from
-the original. It's also why the resolution cap can be aggressive without
-degrading the archive.
+downscaled. The transcription path's cap is applied up front, by shrinking the PNG
+before any model touches it — model-agnostic, independent of the VLM's own processor
+internals. This is what lets the transcription be lossy-but-useful while the embedded
+PDF stays pixel-exact: any transcription error is one glance away from the original.
+It's also why the resolution cap can be aggressive without degrading the archive.
 
 ## Modules
 
@@ -38,8 +39,8 @@ the others.
 | `cli.py` / `__main__.py` | argparse entrypoint; builds a transcriber unless `--no-transcribe`, then calls `pipeline.run()`. |
 | `discover.py` | Resolve `--input` (a file or a folder) into sorted `(note_path, relative_subdir)` pairs. The subdir is what mirrors the input tree under `--output`. |
 | `naming.py` | Derive each output base name: a `YYYYMMDD_HHMMSS` stem becomes `YYYY-MM-DD`; any other stem is kept verbatim. Collisions within an output directory get `-2`/`-3`. |
-| `convert.py` | Wrap `supernotelib`: `note_to_pdf()` and `note_to_page_images()`. Owns the pixel cap. |
-| `transcribe.py` | Define the `Transcriber` protocol and the `MlxVlmTranscriber` implementation. |
+| `convert.py` | Wrap `supernotelib`: `note_to_pdf()` and `note_to_page_images()`. Owns the pre-render pixel cap. |
+| `transcribe.py` | Define the `Transcriber` protocol, the pure `assemble_transcription()` (page joining / `--page-markers`), and the `MlxVlmTranscriber` implementation. |
 | `writer.py` | Compose the Markdown (transcription on top, `![[embed]]` at the bottom) and write both files. |
 | `pipeline.py` | Orchestrate the above; catch per-note failures; return a `Summary`. |
 
@@ -73,8 +74,14 @@ exits non-zero if anything failed, after printing every failure.
 **The page-image cap is a correctness constraint, not a performance tweak.**
 Above roughly 2M pixels, the Qwen3-VL vision stack intermittently returns an
 *empty* generation — silently producing embed-only Markdown. Measured: reliable
-at ≤1.77M px, consistently empty at ≥2.76M. The default of 1.5M sits well below
-that boundary. Do not raise it toward 2M.
+at ≤1.77M px, empty at ≥2.0M on a failing page. The default of 1.5M sits below
+that boundary. Do not raise it toward 2M. `note_to_page_images` downscales each
+page before handing it to the model — a pre-render cap that works for any VLM,
+rather than relying on a specific model's processor internals. The default is a
+deliberately hard-coded conservative constant: it cannot be safely derived from
+model metadata, because the cliff is undocumented and sits *below* every capacity
+the model declares (its `size.longest_edge` is 16.7M; its `num_position_embeddings`
+math implies ~2.36M — both empirically produce empty output).
 
 ## Data flow
 
@@ -93,8 +100,9 @@ renderer runs.
 
 ## Testing strategy
 
-The deterministic layers (`discover`, `naming`, `writer`, `convert`'s downscaler,
-`transcribe`'s fence-stripper and `HF_HOME` default) are unit-tested.
+The deterministic layers (`discover`, `naming`, `writer`, `convert`'s downscaler
+and page-cap, `transcribe`'s `assemble_transcription`, fence-stripper, and `HF_HOME`
+default, and the `cli` parser + progress printer) are unit-tested.
 
 `pipeline` has an integration test that converts a **committed sample `.note`**
 (`tests/fixtures/20260717_012708.note`) through real `supernotelib` while faking

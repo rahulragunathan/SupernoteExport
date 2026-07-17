@@ -67,6 +67,20 @@ def test_rerun_skips_existing_unless_overwrite(tmp_path):
     assert len(third.converted) == 1
 
 
+def test_on_progress_reports_convert_then_skip_per_note(tmp_path):
+    events: list[tuple[int, int, str, str]] = []
+
+    def record(current, total, note_path, status):
+        events.append((current, total, note_path.name, status))
+
+    run(SAMPLE_NOTE, tmp_path, transcriber=FakeTranscriber(), on_progress=record)
+    assert events == [(1, 1, SAMPLE_NOTE.name, "convert")]
+
+    events.clear()
+    run(SAMPLE_NOTE, tmp_path, transcriber=FakeTranscriber(), on_progress=record)
+    assert events == [(1, 1, SAMPLE_NOTE.name, "skip")]
+
+
 def test_no_transcriber_yields_embed_only_markdown(tmp_path):
     summary = run(SAMPLE_NOTE, tmp_path, transcriber=None)
     assert len(summary.converted) == 1
