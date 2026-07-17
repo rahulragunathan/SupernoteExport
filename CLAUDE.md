@@ -28,6 +28,14 @@ The VLM never reads the PDF; the two paths are independent.
 it (then the `drawio` skill's `validate.py` + `render_png.py`); never hand-edit the
 `.drawio` XML or the PNG.
 
+[ROADMAP.md](ROADMAP.md) uses **fixed sections, maintained going forward**: **Status**
+(milestones + completion, `Done (PR #N)` for anything merged), **Known Issues**
+(reproducible bugs only), **Enhancements** (unscheduled unless a schedule is noted on the
+item), **Resolved** (closed issues + end-of-phase review findings, grouped by PR),
+**Unknowns** (least-confident areas / open risks), **Notes** (non-bug caveats). Keep
+descriptive docs (README, ARCHITECTURE) to current state; rationale and decisions live
+here in CLAUDE.md.
+
 ## Key invariants — do not break
 
 - **`HF_HOME` is set before any HF/mlx import.** Model weights go to `HF_HOME`
