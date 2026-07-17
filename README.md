@@ -1,9 +1,9 @@
-# SupernoteSync
+# SupernoteExport
 
 Convert Supernote `.note` files into **Obsidian-ready PDFs and locally-transcribed
 Markdown** — entirely offline on your Mac.
 
-For each `.note` file, SupernoteSync produces two side-by-side outputs:
+For each `.note` file, SupernoteExport produces two side-by-side outputs:
 
 - a **PDF** that preserves the original handwritten layout, and
 - a **Markdown** note whose body is a machine-readable transcription of the
@@ -26,15 +26,17 @@ any transcription error is one glance away from the original.
 - **Transcription:** [`mlx-vlm`](https://github.com/Blaizzy/mlx-vlm), default model
   `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit` (swappable via `--model`).
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the module breakdown, a diagram, and
+the design decisions behind the two independent paths.
+
 ## Requirements
 
 - macOS on Apple Silicon (MLX is Metal-native).
 - Python **3.13** (3.10–3.13 supported; **not** 3.14 yet — some deps lack wheels).
 - ~35 GB free disk for the default model on first run.
 
-Model weights download to **`/Users/rahulragunathan/Local-Models`** (set via
-`HF_HOME`), never into Google Drive or the Obsidian Vault. Override by exporting a
-different `HF_HOME` before running.
+Model weights download once to **`~/Local-Models`** and are cached there. Set
+`HF_HOME` before running to put them somewhere else.
 
 ## Setup
 
@@ -49,12 +51,12 @@ pip install -r requirements-dev.txt      # + pytest, ruff (for development)
 
 ```bash
 # A whole folder (recursive; subfolder tree is mirrored under --output)
-python -m supernote_sync \
-  --input  "/path/to/Supernote/Note/Improv/Friendo/Level 2" \
-  --output "/path/to/Obsidian Vault/Comedy/Improv/Notes/Classes/Friendo/Level 2"
+python -m supernote_export \
+  --input  "/path/to/Supernote/Note/Meetings" \
+  --output "/path/to/vault/Notes/Meetings"
 
 # A single file
-python -m supernote_sync --input note.note --output ./out
+python -m supernote_export --input note.note --output ./out
 ```
 
 ### Options
@@ -85,9 +87,23 @@ The default is tuned for messy handwriting + layout. Lighter/faster swaps:
 ## Development
 
 ```bash
-pytest            # deterministic layers + a real-.note integration test
+# Required: the integration tests convert a real .note, which isn't shipped here.
+export SUPERNOTE_TEST_NOTE="/path/to/20250817_132236.note"
+
+pytest            # deterministic layers + the real-.note integration tests
 ruff format . && ruff check .
 ```
+
+`SUPERNOTE_TEST_NOTE` is **required, not optional**. If it's unset or points at a
+missing file, the integration tests *fail* rather than skip — they are the only
+coverage of the real `supernotelib` boundary, so a silent skip would quietly
+reduce the suite to mocks-testing-mocks.
+
+> **Note:** the integration tests currently assert this specific sample's
+> properties (a `2025-08-17` output stem and a 3-page count), so the variable has
+> to point at `20250817_132236.note` in particular — any other note fails on those
+> assertions. Replacing it with a small committed fixture note is tracked in
+> [ROADMAP.md](ROADMAP.md).
 
 The VLM boundary is a `Transcriber` protocol, so tests inject a fake and never
 require the model. The transcription itself is verified manually (see the plan).

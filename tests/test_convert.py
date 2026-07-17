@@ -1,6 +1,6 @@
 from PIL import Image
 
-from supernote_sync.convert import _downscale_to_max_pixels
+from supernote_export.convert import _downscale_to_max_pixels
 
 
 def test_downscale_shrinks_oversized_image_under_cap():

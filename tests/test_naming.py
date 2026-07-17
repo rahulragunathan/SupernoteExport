@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from supernote_sync.naming import derive_name, plan_output_names
+from supernote_export.naming import derive_name, plan_output_names
 
 
 def test_derive_name_parses_supernote_timestamp():

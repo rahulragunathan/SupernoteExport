@@ -1,4 +1,13 @@
-from supernote_sync.transcribe import _strip_code_fence
+from pathlib import Path
+
+from supernote_export.transcribe import _default_hf_home, _strip_code_fence
+
+
+def test_default_hf_home_resolves_under_the_current_users_home():
+    """Machine-independent: no username baked into the default weights location."""
+    default = _default_hf_home()
+    assert Path.home() in default.parents
+    assert default.name == "Local-Models"
 
 
 def test_strips_markdown_language_fence():

@@ -1,0 +1,124 @@
+# Architecture — SupernoteExport
+
+SupernoteExport is a single-process, offline CLI. It reads Supernote `.note`
+files and writes two artifacts per note: an **archival PDF** and a **Markdown
+note** whose body is a local vision-language-model transcription of the
+handwriting, with the PDF embedded at the bottom.
+
+Everything runs on-device. There is no server, no queue, no database, and no
+network call at conversion time.
+
+![SupernoteExport architecture](docs/architecture/supernote-export-architecture.png)
+
+## The shape of the system
+
+The design is a **linear pipeline with one deliberate fork**. `pipeline.run()`
+plans the whole batch first (discover, then name), then loops over notes. For
+each note, `convert.py` produces two *independent* renderings of the same
+source:
+
+| Path | Renderer | Resolution | Consumer |
+|------|----------|-----------|----------|
+| PDF | `supernotelib.PdfConverter` | Full (~4.9M px/page) | Embedded in the `.md` — the archival record |
+| Page images | `supernotelib.ImageConverter` | Downscaled to `--max-pixels` (default 1.5M) | The VLM, which transcribes them |
+
+**The two paths never meet.** The VLM never reads the PDF, and the PDF is never
+downscaled. This is what lets the transcription be lossy-but-useful while the
+embedded PDF stays pixel-exact: any transcription error is one glance away from
+the original. It's also why the resolution cap can be aggressive without
+degrading the archive.
+
+## Modules
+
+Each module has one responsibility and, apart from `pipeline`, no knowledge of
+the others.
+
+| Module | Responsibility |
+|--------|---------------|
+| `cli.py` / `__main__.py` | argparse entrypoint; builds a transcriber unless `--no-transcribe`, then calls `pipeline.run()`. |
+| `discover.py` | Resolve `--input` (a file or a folder) into sorted `(note_path, relative_subdir)` pairs. The subdir is what mirrors the input tree under `--output`. |
+| `naming.py` | Derive each output base name: a `YYYYMMDD_HHMMSS` stem becomes `YYYY-MM-DD`; any other stem is kept verbatim. Collisions within an output directory get `-2`/`-3`. |
+| `convert.py` | Wrap `supernotelib`: `note_to_pdf()` and `note_to_page_images()`. Owns the pixel cap. |
+| `transcribe.py` | Define the `Transcriber` protocol and the `MlxVlmTranscriber` implementation. |
+| `writer.py` | Compose the Markdown (transcription on top, `![[embed]]` at the bottom) and write both files. |
+| `pipeline.py` | Orchestrate the above; catch per-note failures; return a `Summary`. |
+
+## Design decisions worth knowing
+
+**Transcription sits behind a protocol.** `pipeline` depends only on
+`transcribe_pages(images) -> str`, so the integration test injects a fake and
+exercises the real `supernotelib` conversion path without loading a multi-gigabyte
+model. It's also the seam for swapping in a different model or backend.
+
+**MLX is imported lazily**, inside `MlxVlmTranscriber` methods rather than at
+module scope. `--no-transcribe` runs and the entire test suite therefore never
+load MLX. This is also why `mlx-vlm` is a reasonable candidate for an optional
+install extra rather than a hard dependency.
+
+**`HF_HOME` is set before any Hugging Face or MLX import**, at the top of
+`transcribe.py`, defaulting to `~/Local-Models` via `_default_hf_home()`. The
+ordering is load-bearing: those libraries read the variable at import time, so
+only stdlib imports may precede the `os.environ.setdefault` call. Export a
+different `HF_HOME` to relocate the weights.
+
+**Naming is deterministic and filesystem-independent.** `plan_output_names()`
+disambiguates from input order alone — it never probes the disk — so a rerun
+produces identical names. That's what makes skip-on-rerun and `--overwrite`
+stable rather than order-dependent.
+
+**One bad note cannot abort a batch.** `pipeline.run()` wraps each note in
+`try/except`, records the failure in `Summary.failed`, and continues. The CLI
+exits non-zero if anything failed, after printing every failure.
+
+**The page-image cap is a correctness constraint, not a performance tweak.**
+Above roughly 2M pixels, the Qwen3-VL vision stack intermittently returns an
+*empty* generation — silently producing embed-only Markdown. Measured: reliable
+at ≤1.77M px, consistently empty at ≥2.76M. The default of 1.5M sits well below
+that boundary. Do not raise it toward 2M.
+
+## Data flow
+
+```
+.note ──┬── note_to_pdf()        → PDF bytes (full resolution) ──────────┐
+        │                                                                 ▼
+        └── note_to_page_images() → PNGs (≤ --max-pixels) → VLM → text → writer
+                                                                          │
+                                                        <name>.pdf  ◄─────┤
+                                                        <name>.md   ◄─────┘
+```
+
+Skip logic short-circuits before any conversion: if `<name>.md` exists and
+`--overwrite` wasn't passed, the note is recorded as skipped and neither
+renderer runs.
+
+## Testing strategy
+
+The deterministic layers (`discover`, `naming`, `writer`, `convert`'s downscaler,
+`transcribe`'s fence-stripper and `HF_HOME` default) are unit-tested.
+
+`pipeline` has an integration test that converts a **real `.note`** through real
+`supernotelib` while faking only the `Transcriber`. The sample lives outside the
+repo and its path comes from the required `SUPERNOTE_TEST_NOTE` environment
+variable — unset, the tests fail rather than skip, so the only coverage of the
+real `supernotelib` boundary can't disappear unnoticed. See
+[ROADMAP.md](ROADMAP.md) for the plan to replace it with a committed fixture.
+
+The VLM itself has no unit test by design: its output is non-deterministic and it
+needs a large model. It's verified by running it and reading the result — which
+is how the resolution cliff above was found.
+
+## Regenerating the diagram
+
+The diagram is generated, not hand-drawn, so it round-trips without diff churn:
+
+```bash
+python docs/architecture/build_architecture.py
+python ~/.claude/skills/drawio/scripts/validate.py docs/architecture/supernote-export-architecture.drawio
+python ~/.claude/skills/drawio/scripts/render_png.py docs/architecture/supernote-export-architecture.drawio
+mv docs/architecture/supernote-export-architecture.drawio.png docs/architecture/supernote-export-architecture.png
+```
+
+`build_architecture.py` documents its reserved routing corridors at the top; edit
+it rather than the `.drawio` XML. The validator checks geometry only, so if you
+move boxes, look at the rendered PNG too — a clean validation doesn't mean the
+result reads well.

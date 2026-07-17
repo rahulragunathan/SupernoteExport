@@ -1,5 +1,5 @@
 [project]
-name = "supernote-sync"
+name = "supernote-export"
 version = "0.1.0"
 description = "Convert Supernote .note files into Obsidian-ready PDFs and transcribed Markdown, locally."
 requires-python = ">=3.10"

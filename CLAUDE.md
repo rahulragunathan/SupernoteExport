@@ -1,4 +1,4 @@
-# CLAUDE.md — SupernoteSync
+# CLAUDE.md — SupernoteExport
 
 Project instructions for working in this repo. Global standards in
 `~/.claude/CLAUDE.md` still apply (venv not conda, TDD, double-quoted paths, etc.).
@@ -8,7 +8,7 @@ Project instructions for working in this repo. Global standards in
 A local CLI that converts Supernote `.note` files into an Obsidian-ready **PDF** +
 **transcribed Markdown** pair, one per note. Everything runs offline on Apple Silicon.
 
-## Architecture (single-responsibility modules under `supernote_sync/`)
+## Architecture (single-responsibility modules under `supernote_export/`)
 
 - `discover.py` — `--input` (file/folder) → sorted `(note_path, relative_subdir)`.
 - `naming.py` — timestamp→date vs. verbatim stem; deterministic `-2/-3` collision suffixing.
@@ -18,16 +18,23 @@ A local CLI that converts Supernote `.note` files into an Obsidian-ready **PDF**
 - `writer.py` — `build_markdown` (transcription on top, embed at bottom) + `write_note_outputs`.
 - `pipeline.py` — orchestrates discover → convert → transcribe → write; per-note
   try/except; returns a `Summary`.
-- `cli.py` / `__main__.py` — argparse entrypoint (`python -m supernote_sync`).
+- `cli.py` / `__main__.py` — argparse entrypoint (`python -m supernote_export`).
 
 Data flow: `.note` → (PDF for the embed) + (page PNGs → VLM → transcription) → `.md`.
 The VLM never reads the PDF; the two paths are independent.
 
+[ARCHITECTURE.md](ARCHITECTURE.md) has the full write-up and a diagram. The diagram is
+**generated, not hand-drawn** — edit `docs/architecture/build_architecture.py` and re-run
+it (then the `drawio` skill's `validate.py` + `render_png.py`); never hand-edit the
+`.drawio` XML or the PNG.
+
 ## Key invariants — do not break
 
-- **Model weights never touch Google Drive or the Vault.** They go to `HF_HOME`
-  (default `/Users/rahulragunathan/Local-Models`), set at the top of `transcribe.py`
-  *before* any HF/mlx import. Keep that ordering.
+- **`HF_HOME` is set before any HF/mlx import.** Model weights go to `HF_HOME`
+  (default `~/Local-Models` via `_default_hf_home()`), set at the top of
+  `transcribe.py`. Keep that ordering — those libraries read the variable at
+  import time, so only stdlib imports may precede the `os.environ.setdefault`
+  call.
 - **MLX is imported lazily** (inside `MlxVlmTranscriber` methods) so `--no-transcribe`
   and the whole test suite run without loading a multi-GB model.
 - **Naming is deterministic and filesystem-independent** — reproducible across runs
@@ -43,15 +50,20 @@ The VLM never reads the PDF; the two paths are independent.
 
 - Deterministic layers (`naming`, `discover`, `writer`, `pipeline`) are unit/integration
   tested. Write a failing test first (TDD).
-- The `pipeline` integration test uses a **real sample `.note`** (skips if absent) plus a
-  **fake `Transcriber`** — so `supernotelib` is exercised for real but no model is needed.
+- The `pipeline` integration test uses a **real sample `.note`** plus a **fake
+  `Transcriber`** — so `supernotelib` is exercised for real but no model is needed. The
+  note's path comes from **`SUPERNOTE_TEST_NOTE`**, which is *required*: unset or bad, the
+  tests fail rather than skip, so this coverage can't vanish silently. It currently must
+  point at `20250817_132236.note` specifically — the tests assert that sample's stem
+  (`2025-08-17`) and page count (3). Replacing it with a committed fixture is in ROADMAP.
 - The VLM layer has no unit test by design; verify by running it and eyeballing output.
 - Before hand-off: `pytest` green, `ruff format .`, `ruff check .`.
 
 ## Gotchas
 
-- Reading `.note` files from Google Drive File Stream can be slow (on-demand download);
-  conversion itself is ~1 s/note. A slow folder run is usually Drive I/O, not a bug.
+- Reading `.note` files from a cloud-synced folder (Google Drive File Stream, iCloud,
+  Dropbox) can be slow, since files download on demand. Conversion itself is ~1 s/note,
+  so a slow folder run is usually input I/O, not a bug.
 - `supernotelib.PdfConverter.convert(-1, ...)` renders all pages and returns `bytes`.
 - **VLM image cap is load-bearing, not cosmetic.** Native page render is 1920×2560
   (~4.9M px). Above ~2M px, Qwen3-VL intermittently emits an *empty* generation

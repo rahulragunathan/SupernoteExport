@@ -1,0 +1,126 @@
+<?xml version="1.0" ?>
+<mxfile host="app.diagrams.net" type="device" version="24.0.0">
+  <diagram name="SupernoteExport Architecture" id="supernote-export">
+    <mxGraphModel dx="1422" dy="757" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1620" pageHeight="790" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="SupernoteExport — &lt;span style='font-weight:normal'&gt;.note → archival PDF + locally-transcribed Markdown (fully offline)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f3864;strokeColor=#1f3864;strokeWidth=1;fontColor=#ffffff;fontSize=17;fontStyle=1;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1540" height="46" as="geometry"/>
+        </mxCell>
+        <mxCell id="3" value="Input" style="rounded=0;whiteSpace=wrap;html=1;fillColor=light-dark(#eaf3fb,#12242e);strokeColor=light-dark(#0078d4,#4da3ff);strokeWidth=2;dashed=1;verticalAlign=top;align=left;fontColor=light-dark(#1f3864,#4da3ff);fontSize=14;fontStyle=1;spacingTop=8;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="92" width="280" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell id="4" value="supernote_export  —  local CLI, runs entirely on-device" style="rounded=0;whiteSpace=wrap;html=1;fillColor=light-dark(#f6f4fd,#1c1a26);strokeColor=light-dark(#5b3fbf,#b59dff);strokeWidth=2;dashed=1;verticalAlign=top;align=left;fontColor=light-dark(#5b3fbf,#b59dff);fontSize=14;fontStyle=1;spacingTop=8;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="92" width="920" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell id="5" value="Output — one pair per note" style="rounded=0;whiteSpace=wrap;html=1;fillColor=light-dark(#eef3f8,#101b26);strokeColor=light-dark(#003c71,#7fb3e6);strokeWidth=2;dashed=1;verticalAlign=top;align=left;fontColor=light-dark(#003c71,#7fb3e6);fontSize=14;fontStyle=1;spacingTop=8;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="92" width="260" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell id="6" value="&lt;b&gt;.note files&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Supernote notebooks&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;--input takes any path: a single file, or a folder searched recursively. Read-only; the subfolder tree is mirrored on output.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#0078d4,#4da3ff);strokeColor=light-dark(#0078d4,#4da3ff);strokeWidth=1;fontColor=light-dark(#ffffff,#08131a);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="70" y="280" width="220" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="7" value="&lt;b&gt;cli.py / __main__.py&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;argparse entrypoint&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#34a853;strokeColor=#34a853;strokeWidth=1;fontColor=#ffffff;fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="130" width="240" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="8" value="&lt;b&gt;pipeline.py — run()&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Orchestrator → Summary&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#5b3fbf,#b59dff);strokeColor=light-dark(#5b3fbf,#b59dff);strokeWidth=1;fontColor=light-dark(#ffffff,#16122b);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="730" y="130" width="240" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="9" value="&lt;b&gt;1. discover.py&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Resolve --input&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;File or folder → sorted (note, subdir)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#bf8f00,#ffd966);strokeColor=light-dark(#bf8f00,#ffd966);strokeWidth=1;fontColor=light-dark(#ffffff,#241a00);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="250" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="10" value="&lt;b&gt;2. naming.py&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Deterministic output names&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;Timestamp → date; -2/-3 on collision&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#bf8f00,#ffd966);strokeColor=light-dark(#bf8f00,#ffd966);strokeWidth=1;fontColor=light-dark(#ffffff,#241a00);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="730" y="250" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="11" value="&lt;b&gt;3. convert.py&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;supernotelib wrapper&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;note_to_pdf() · note_to_page_images()&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d04a02;strokeColor=#d04a02;strokeWidth=1;fontColor=#ffffff;fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="390" width="240" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="&lt;b&gt;4. transcribe.py&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Transcriber protocol&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;MlxVlmTranscriber — MLX imported lazily&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#9c27b0,#d18cff);strokeColor=light-dark(#9c27b0,#d18cff);strokeWidth=1;fontColor=light-dark(#ffffff,#2a0733);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="730" y="390" width="240" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="13" value="&lt;b&gt;5. writer.py&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Compose + write&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;Transcription on top, embed at bottom&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#008272;strokeColor=#008272;strokeWidth=1;fontColor=#ffffff;fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="320" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="14" value="&lt;b&gt;&amp;lt;name&amp;gt;.pdf&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Archival — source of truth&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;Full resolution&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#003c71,#7fb3e6);strokeColor=light-dark(#003c71,#7fb3e6);strokeWidth=1;fontColor=light-dark(#ffffff,#04121c);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="250" width="200" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="15" value="&lt;b&gt;&amp;lt;name&amp;gt;.md&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;Transcription + ![[embed]]&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;Obsidian note&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#003c71,#7fb3e6);strokeColor=light-dark(#003c71,#7fb3e6);strokeWidth=1;fontColor=light-dark(#ffffff,#04121c);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="420" width="200" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="16" value="&lt;b&gt;supernotelib&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;third-party&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;PdfConverter · ImageConverter&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#37474f,#b0bec5);strokeColor=light-dark(#37474f,#b0bec5);strokeWidth=1;fontColor=light-dark(#ffffff,#11181c);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="650" width="240" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="17" value="&lt;b&gt;mlx-vlm&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;third-party · Apple Silicon&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;Qwen3-VL by default&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#37474f,#b0bec5);strokeColor=light-dark(#37474f,#b0bec5);strokeWidth=1;fontColor=light-dark(#ffffff,#11181c);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="730" y="650" width="240" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="18" value="&lt;b&gt;Model weights — $HF_HOME&lt;/b&gt;&lt;br&gt;&lt;span style='font-style:italic;font-weight:normal;font-size:10px'&gt;local disk · default ~/Local-Models&lt;/span&gt;&lt;br&gt;&lt;span style='font-weight:normal;font-size:10px'&gt;Downloaded once on first run, then cached&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#37474f,#b0bec5);strokeColor=light-dark(#37474f,#b0bec5);strokeWidth=1;fontColor=light-dark(#ffffff,#11181c);fontSize=12;fontStyle=0;arcSize=10;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="650" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="19" value="&lt;font color=&quot;light-dark(#000000,#4da3ff)&quot;&gt;Scan&lt;div&gt;for .note&lt;/div&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=light-dark(#0078d4,#4da3ff);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#0078d4,#4da3ff);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="6" target="9">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="-16" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" value="&lt;font color=&quot;light-dark(#000000,#4da3ff)&quot;&gt;Load&lt;div&gt;note bytes&lt;/div&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=light-dark(#0078d4,#4da3ff);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#0078d4,#4da3ff);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="6" target="11">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="-16" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="21" value="Parse args&lt;div&gt;call run()&lt;/div&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#34a853;strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=#34a853;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="7" target="8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="22" value="&lt;font color=&quot;light-dark(#000000,#b59dff)&quot;&gt;Discover notes&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=light-dark(#5b3fbf,#b59dff);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#5b3fbf,#b59dff);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="8" target="9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="225"/>
+              <mxPoint x="510" y="225"/>
+            </Array>
+            <mxPoint x="0" y="-12" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="23" value="&lt;font color=&quot;light-dark(#000000,#ffd966)&quot;&gt;Sorted&lt;div&gt;(note, subdir)&lt;/div&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=light-dark(#bf8f00,#ffd966);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#bf8f00,#ffd966);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="9" target="10">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="24" value="&lt;font color=&quot;light-dark(#000000,#ffd966)&quot;&gt;Planned (note, dir, name)&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=light-dark(#bf8f00,#ffd966);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#bf8f00,#ffd966);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="10" target="11">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="360"/>
+              <mxPoint x="510" y="360"/>
+            </Array>
+            <mxPoint x="0" y="-12" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="25" value="Page PNGs&lt;div&gt;≤ --max-pixels&lt;/div&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#d04a02;strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=#d04a02;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="11" target="12">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="26" value="PDF bytes&lt;div&gt;(full resolution)&lt;/div&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#d04a02;strokeWidth=2;jumpStyle=gap;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=#d04a02;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="11" target="13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="570" y="520"/>
+              <mxPoint x="1145" y="520"/>
+            </Array>
+            <mxPoint x="-70" y="0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="27" value="&lt;font color=&quot;light-dark(#000000,#d18cff)&quot;&gt;Markdown&lt;div&gt;transcription&lt;/div&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=light-dark(#9c27b0,#d18cff);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#9c27b0,#d18cff);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="12" target="13">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="28" value="Write" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#008272;strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=#008272;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="13" target="14">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="29" value="Write" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#008272;strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=#008272;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="13" target="15">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="30" value="Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;strokeColor=#d04a02;strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=#d04a02;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="11" target="16">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="31" value="&lt;font color=&quot;light-dark(#000000,#d18cff)&quot;&gt;Calls&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=light-dark(#9c27b0,#d18cff);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#9c27b0,#d18cff);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="12" target="17">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="32" value="&lt;font color=&quot;light-dark(#000000,#b0bec5)&quot;&gt;Loads / caches&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=0;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=light-dark(#37474f,#b0bec5);strokeWidth=2;endArrow=classic;endFill=1;startSize=2;endSize=2;fontSize=10;fontColor=light-dark(#37474f,#b0bec5);labelBackgroundColor=#ffffff;" edge="1" parent="1" source="17" target="18">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
