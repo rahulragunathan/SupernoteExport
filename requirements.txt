@@ -1,3 +1,4 @@
-supernotelib>=0.6.0
-mlx-vlm>=0.1.12
-Pillow>=10.0.0
+# Runtime install. Version constraints live in pyproject.toml (single source).
+# Core install is PDF-only; add the transcription extra for the VLM:
+#   pip install -e ".[transcribe]"
+-e .

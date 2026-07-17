@@ -26,48 +26,63 @@ any transcription error is one glance away from the original.
 - **Transcription:** [`mlx-vlm`](https://github.com/Blaizzy/mlx-vlm), default model
   `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit` (swappable via `--model`).
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the module breakdown, a diagram, and
-the design decisions behind the two independent paths.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the module breakdown, a diagram, and how
+the two independent paths (archival PDF and transcription) fit together.
 
 ## Requirements
 
-- macOS on Apple Silicon (MLX is Metal-native).
-- Python **3.13** (3.10–3.13 supported; **not** 3.14 yet — some deps lack wheels).
-- ~35 GB free disk for the default model on first run.
+- Python **3.10–3.13** (3.13 recommended).
+- **Transcription** needs macOS on Apple Silicon (MLX is Metal-native) and ~35 GB
+  free disk for the default model on first run. PDF-only conversion
+  (`--no-transcribe`) runs anywhere.
 
 Model weights download once to **`~/Local-Models`** and are cached there. Set
 `HF_HOME` before running to put them somewhere else.
 
-## Setup
+## Install
+
+```bash
+# PDF-only conversion (any platform):
+pip install "git+https://github.com/rahulragunathan/SupernoteExport.git"
+
+# With local handwriting transcription (Apple Silicon):
+pip install "supernote-export[transcribe] @ git+https://github.com/rahulragunathan/SupernoteExport.git"
+```
+
+Installs a `supernote-export` command. `mlx-vlm` is an optional `[transcribe]`
+extra, so the base install stays platform-independent and small.
+
+### From a clone (development)
 
 ```bash
 python3.13 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt          # runtime
-pip install -r requirements-dev.txt      # + pytest, ruff (for development)
+pip install -e ".[dev,transcribe]"   # editable install + dev/transcription extras
 ```
 
 ## Usage
 
 ```bash
 # A whole folder (recursive; subfolder tree is mirrored under --output)
-python -m supernote_export \
+supernote-export \
   --input  "/path/to/Supernote/Note/Meetings" \
   --output "/path/to/vault/Notes/Meetings"
 
 # A single file
-python -m supernote_export --input note.note --output ./out
+supernote-export --input note.note --output ./out
 ```
+
+(Equivalent to `python -m supernote_export …` if you prefer the module form.)
 
 ### Options
 
 | Flag | Default | Meaning |
-|------|---------|---------|
+| --- | --- | --- |
 | `--input` | *(required)* | A `.note` file or a folder (searched recursively). |
 | `--output` | *(required)* | Output root; input subfolder tree is mirrored under it. |
 | `--model` | `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit` | MLX-VLM model for transcription. |
 | `--pdf-mode` | `raster` | `raster` (pixel-exact) or `vector` (traced/scalable). |
-| `--max-pixels` | `1500000` | Cap on page-image pixels fed to the VLM. Native ~4.9M **reliably breaks** Qwen3-VL (empty output); keep this under ~2M. |
+| `--max-pixels` | `1500000` | Cap on page-image pixels fed to the VLM. The default is tuned for reliable transcription; see [ARCHITECTURE.md](ARCHITECTURE.md) before raising it. |
 | `--page-separators` / `--no-page-separators` | off | Put a `---` rule between pages (vs. just a blank line). |
 | `--no-transcribe` | off | PDF only; the `.md` holds just the embed (fast, no model). |
 | `--overwrite` | off | Re-convert even if the `.md` exists (default: skip → idempotent). |
@@ -100,8 +115,7 @@ sample is disposable and carries no personal content; a `.gitignore` rule keeps 
 *other* `.note` dropped in `tests/fixtures/` from being committed by accident.
 
 The VLM boundary is a `Transcriber` protocol, so the default tests inject a fake and
-never load the model. The real model is covered by an **opt-in eval** (`pytest -m
-vlm`, deselected by default) that transcribes the fixture and asserts the output is
+never load the model. The real model is covered by an **opt-in eval** (`pytest -m vlm`, deselected by default) that transcribes the fixture and asserts the output is
 non-empty and carries a few clearly-printed anchors — tolerant checks that guard the
 image-resolution cliff (see [ARCHITECTURE.md](ARCHITECTURE.md)) without pinning an
 exact transcription. It skips automatically if the model isn't cached.

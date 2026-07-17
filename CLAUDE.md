@@ -8,7 +8,7 @@ Project instructions for working in this repo. Global standards in
 A local CLI that converts Supernote `.note` files into an Obsidian-ready **PDF** +
 **transcribed Markdown** pair, one per note. Everything runs offline on Apple Silicon.
 
-## Architecture (single-responsibility modules under `supernote_export/`)
+## Architecture (single-responsibility modules under `src/supernote_export/`)
 
 - `discover.py` — `--input` (file/folder) → sorted `(note_path, relative_subdir)`.
 - `naming.py` — timestamp→date vs. verbatim stem; deterministic `-2/-3` collision suffixing.
@@ -44,7 +44,23 @@ it (then the `drawio` skill's `validate.py` + `render_png.py`); never hand-edit 
 ## Environment
 
 - Python **3.13** (homebrew `/opt/homebrew/bin/python3.13`). Not 3.14 — deps lack wheels.
-- `python3.13 -m venv .venv` → `pip install -r requirements-dev.txt`.
+- `python3.13 -m venv .venv` → `pip install -r requirements-dev.txt` (which is just
+  `-e ".[dev,transcribe]"`).
+
+## Packaging
+
+- **`src/` layout + editable install required.** The package lives in
+  `src/supernote_export/`, so it is *not* importable from the repo root — you must
+  `pip install -e .` for imports (and `pytest`) to work. This is deliberate: tests
+  exercise the installed artifact, so a packaging bug fails the suite instead of
+  hiding behind a working-dir import.
+- **Dependencies are single-sourced in `pyproject.toml`.** Version constraints live
+  only in `[project]`; `requirements*.txt` are thin `-e .` / `-e ".[dev,transcribe]"`
+  pointers. `mlx-vlm` is the optional `[transcribe]` extra (Metal-only), so the base
+  install is platform-independent — matching the lazy MLX import.
+- Build backend is **hatchling**; `[tool.hatch.build.targets.wheel] packages` points
+  at `src/supernote_export`. `python -m build` produces a clean wheel (package only —
+  no tests, fixture, or docs) with the console script and bundled `LICENSE`.
 
 ## Testing
 
@@ -72,6 +88,8 @@ it (then the `drawio` skill's `validate.py` + `render_png.py`); never hand-edit 
   Dropbox) can be slow, since files download on demand. Conversion itself is ~1 s/note,
   so a slow folder run is usually input I/O, not a bug.
 - `supernotelib.PdfConverter.convert(-1, ...)` renders all pages and returns `bytes`.
+- **PySN is intentionally not used** — `supernotelib` covers all conversion needs, so
+  don't reach for PySN when extending `convert.py`.
 - **VLM image cap is load-bearing, not cosmetic.** Native page render is 1920×2560
   (~4.9M px). Above ~2M px, Qwen3-VL intermittently emits an *empty* generation
   (immediate EOS) — this silently produced embed-only `.md` files. `note_to_page_images`
