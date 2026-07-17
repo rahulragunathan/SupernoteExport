@@ -1,4 +1,4 @@
-from supernote_sync.writer import build_markdown, write_note_outputs
+from supernote_export.writer import build_markdown, write_note_outputs
 
 
 def test_build_markdown_transcription_on_top_embed_on_bottom():

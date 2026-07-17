@@ -1,24 +1,42 @@
 """Integration test for the pipeline: real .note conversion + a fake transcriber.
 
 Uses a real sample note (read-only) so the ``supernotelib`` path is genuinely
-exercised. Skips if the sample is unavailable, keeping the suite runnable
-anywhere without shipping personal notes in the repo.
+exercised. Personal notes aren't shipped in the repo, so the note's location comes
+from the ``SUPERNOTE_TEST_NOTE`` environment variable.
+
+The variable is required: an unset or bad path fails the run rather than skipping
+it, so this — the only coverage of the real ``supernotelib`` boundary — cannot
+disappear silently.
 """
 
+from __future__ import annotations
+
+import os
 from pathlib import Path
 
 import pytest
 
 from PIL import Image
 
-from supernote_sync.pipeline import run
+from supernote_export.pipeline import run
 
-SAMPLE_NOTE = Path(
-    "/Users/rahulragunathan/Library/CloudStorage/GoogleDrive-rahul.ragunathan@gmail.com"
-    "/My Drive/Supernote/Note/Improv/Friendo/Level 2/20250817_132236.note"
-)
+SAMPLE_NOTE_ENV_VAR = "SUPERNOTE_TEST_NOTE"
 
-needs_sample = pytest.mark.skipif(not SAMPLE_NOTE.exists(), reason="sample .note not present")
+
+@pytest.fixture(scope="session")
+def sample_note() -> Path:
+    raw = os.environ.get(SAMPLE_NOTE_ENV_VAR, "").strip()
+    if not raw:
+        pytest.fail(
+            f"{SAMPLE_NOTE_ENV_VAR} is not set, so the real-.note integration tests "
+            f"cannot run. Point it at a .note file, e.g.\n"
+            f"    export {SAMPLE_NOTE_ENV_VAR}='/path/to/20250817_132236.note'\n"
+            f"See README > Development."
+        )
+    path = Path(raw)
+    if not path.is_file():
+        pytest.fail(f"{SAMPLE_NOTE_ENV_VAR} points at '{path}', which is not a file.")
+    return path
 
 
 class FakeTranscriber:
@@ -32,10 +50,9 @@ class FakeTranscriber:
         return "# Fake transcription\n\n- point one"
 
 
-@needs_sample
-def test_single_file_produces_pdf_and_md_side_by_side(tmp_path):
+def test_single_file_produces_pdf_and_md_side_by_side(tmp_path, sample_note):
     fake = FakeTranscriber()
-    summary = run(SAMPLE_NOTE, tmp_path, transcriber=fake)
+    summary = run(sample_note, tmp_path, transcriber=fake)
 
     assert len(summary.converted) == 1
     assert not summary.failed
@@ -53,22 +70,20 @@ def test_single_file_produces_pdf_and_md_side_by_side(tmp_path):
     assert fake.calls == [3]
 
 
-@needs_sample
-def test_rerun_skips_existing_unless_overwrite(tmp_path):
+def test_rerun_skips_existing_unless_overwrite(tmp_path, sample_note):
     fake = FakeTranscriber()
-    run(SAMPLE_NOTE, tmp_path, transcriber=fake)
+    run(sample_note, tmp_path, transcriber=fake)
 
-    second = run(SAMPLE_NOTE, tmp_path, transcriber=fake)
+    second = run(sample_note, tmp_path, transcriber=fake)
     assert len(second.skipped) == 1
     assert not second.converted
 
-    third = run(SAMPLE_NOTE, tmp_path, transcriber=fake, overwrite=True)
+    third = run(sample_note, tmp_path, transcriber=fake, overwrite=True)
     assert len(third.converted) == 1
 
 
-@needs_sample
-def test_no_transcriber_yields_embed_only_markdown(tmp_path):
-    summary = run(SAMPLE_NOTE, tmp_path, transcriber=None)
+def test_no_transcriber_yields_embed_only_markdown(tmp_path, sample_note):
+    summary = run(sample_note, tmp_path, transcriber=None)
     assert len(summary.converted) == 1
     md = (tmp_path / "2025-08-17.md").read_text(encoding="utf-8")
     assert md == "![[2025-08-17.pdf]]\n"

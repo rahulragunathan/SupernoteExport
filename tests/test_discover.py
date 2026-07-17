@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from supernote_sync.discover import discover_notes
+from supernote_export.discover import discover_notes
 
 
 def test_single_file_returns_one_entry_with_current_subdir(tmp_path):

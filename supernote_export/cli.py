@@ -1,4 +1,4 @@
-"""Command-line entrypoint: ``python -m supernote_sync``."""
+"""Command-line entrypoint: ``python -m supernote_export``."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from .transcribe import DEFAULT_MODEL
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="supernote_sync",
+        prog="supernote_export",
         description="Convert Supernote .note files into Obsidian-ready PDFs and "
         "locally-transcribed Markdown.",
     )
