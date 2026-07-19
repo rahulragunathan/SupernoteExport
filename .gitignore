@@ -13,3 +13,4 @@ __pycache__/
 # sample the integration tests depend on.
 tests/fixtures/*.note
 !tests/fixtures/20260717_012708.note
+*.code-workspace
