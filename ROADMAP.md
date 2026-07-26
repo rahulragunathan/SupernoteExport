@@ -34,7 +34,7 @@ Milestones and their completion; PR reference for anything Done.
   **investigated and closed as not viable** — the pre-render downscale stays (see
   Resolved).
 
-- **Phase 6 — Standard Hugging Face cache location: In progress** (unmerged).
+- **Phase 6 — Standard Hugging Face cache location: Done** (PR #7).
   `transcribe.py` no longer sets `HF_HOME`; weights go to `~/.cache/huggingface`
   unless the user exports `HF_HOME` themselves. Removes `_default_hf_home()`, the
   module-level `os.environ.setdefault`, and the `# noqa: E402` import ordering it
@@ -120,6 +120,18 @@ Delivered three Enhancement items in one phase:
 3. **Progress output.** `pipeline.run` gained an `on_progress(index, total, path,
    status)` callback (status `convert`/`skip`); the CLI prints a per-note stderr
    line. The library stays print-free and unit-tested.
+
+### PR #7 — standard HF cache location
+
+- **`_default_hf_home()` / `Path.home()` failure mode: gone.** The `RuntimeError` risk
+  on an unresolvable home directory disappeared with the function — nothing in the
+  package resolves a home path any more.
+- **`requirements-dev.txt` was unusable with uv.** The quoted `-e ".[dev,transcribe]"`
+  parses under pip but not uv (`Expected package name starting with an alphanumeric
+  character, found '"'`). Unquoted; works under both.
+- **Homebrew `python@3.13` can vanish** (only `python@3.14` remains), which kills the
+  venv since its interpreter is gone. `uv venv --python 3.13` rebuilds it without
+  adding a second CPython to the Homebrew tree; both routes are documented.
 
 ### Runtime validation (2026-07-17)
 
