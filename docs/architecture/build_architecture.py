@@ -453,8 +453,8 @@ weights = box(
     650,
     300,
     70,
-    "<b>Model weights — $HF_HOME</b><br>"
-    + sub("local disk · default ~/Local-Models")
+    "<b>Model weights — HF cache</b><br>"
+    + sub("local disk · default ~/.cache/huggingface")
     + "<br>"
     + desc("Downloaded once on first run, then cached"),
     fill=COLOR_EXTERNAL_SLATE,

@@ -1,17 +1,29 @@
-from pathlib import Path
+import os
+import subprocess
+import sys
 
 from supernote_export.transcribe import (
-    _default_hf_home,
     _strip_code_fence,
     assemble_transcription,
 )
 
 
-def test_default_hf_home_resolves_under_the_current_users_home():
-    """Machine-independent: no username baked into the default weights location."""
-    default = _default_hf_home()
-    assert Path.home() in default.parents
-    assert default.name == "Local-Models"
+def test_importing_transcribe_leaves_hf_home_unset():
+    """Weights land wherever Hugging Face puts them; we impose no location.
+
+    Runs in a subprocess with ``HF_HOME`` stripped, because the import-time
+    environment can only be observed on a fresh interpreter.
+    """
+    env = {key: value for key, value in os.environ.items() if key != "HF_HOME"}
+    probe = "import supernote_export.transcribe, os; print('HF_HOME' in os.environ)"
+    result = subprocess.run(
+        [sys.executable, "-c", probe],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == "False"
 
 
 def test_strips_markdown_language_fence():

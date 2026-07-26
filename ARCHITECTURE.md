@@ -56,11 +56,10 @@ module scope. `--no-transcribe` runs and the entire test suite therefore never
 load MLX. This is also what lets `mlx-vlm` be the optional `[transcribe]` extra
 rather than a hard dependency, so the base install runs on any platform.
 
-**`HF_HOME` is set before any Hugging Face or MLX import**, at the top of
-`transcribe.py`, defaulting to `~/Local-Models` via `_default_hf_home()`. The
-ordering is load-bearing: those libraries read the variable at import time, so
-only stdlib imports may precede the `os.environ.setdefault` call. Export a
-different `HF_HOME` to relocate the weights.
+**The weights location is not ours to choose.** `transcribe.py` sets no environment
+variables, so model weights land in the standard Hugging Face cache
+(`~/.cache/huggingface`), and `HF_HOME` relocates them exactly as it does for every
+other Hugging Face tool.
 
 **Naming is deterministic and filesystem-independent.** `plan_output_names()`
 disambiguates from input order alone — it never probes the disk — so a rerun
@@ -101,8 +100,10 @@ renderer runs.
 ## Testing strategy
 
 The deterministic layers (`discover`, `naming`, `writer`, `convert`'s downscaler
-and page-cap, `transcribe`'s `assemble_transcription`, fence-stripper, and `HF_HOME`
-default, and the `cli` parser + progress printer) are unit-tested.
+and page-cap, `transcribe`'s `assemble_transcription` and fence-stripper, and the
+`cli` parser + progress printer) are unit-tested. One test spawns a subprocess to
+assert that importing `transcribe` leaves `HF_HOME` untouched — import-time
+environment effects are only observable on a fresh interpreter.
 
 `pipeline` has an integration test that converts a **committed sample `.note`**
 (`tests/fixtures/20260717_012708.note`) through real `supernotelib` while faking

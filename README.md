@@ -36,8 +36,10 @@ the two independent paths (archival PDF and transcription) fit together.
   free disk for the default model on first run. PDF-only conversion
   (`--no-transcribe`) runs anywhere.
 
-Model weights download once to **`~/Local-Models`** and are cached there. Set
-`HF_HOME` before running to put them somewhere else.
+Model weights download once into the standard Hugging Face cache
+(**`~/.cache/huggingface`**) and are reused from there. To keep them elsewhere, export
+`HF_HOME` as with any other Hugging Face tool — e.g. `export HF_HOME=~/Local-Models`
+in your shell profile. This tool imposes no location of its own.
 
 ## Install
 
@@ -58,6 +60,14 @@ extra, so the base install stays platform-independent and small.
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev,transcribe]"   # editable install + dev/transcription extras
+```
+
+No 3.13 interpreter on PATH? [uv](https://docs.astral.sh/uv/) supplies one without
+installing another system Python:
+
+```bash
+uv venv --python 3.13 .venv
+uv pip install -e .[dev,transcribe]
 ```
 
 ## Usage

@@ -2,29 +2,18 @@
 
 The transcriber sits behind the ``Transcriber`` protocol so the pipeline (and its
 tests) depend only on ``transcribe_pages``; the concrete ``MlxVlmTranscriber`` is
-the MLX-VLM implementation. Model weights are placed by ``HF_HOME``, which is set
-before any Hugging Face / mlx-vlm import runs (see ``_default_hf_home``).
+the MLX-VLM implementation. Model weights go wherever Hugging Face caches them
+(``~/.cache/huggingface`` by default); this module deliberately imposes no
+location of its own — export ``HF_HOME`` to relocate them.
 """
 
 from __future__ import annotations
 
-import os
+import tempfile
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
-
-def _default_hf_home() -> Path:
-    """Where model weights land when ``HF_HOME`` isn't already set."""
-    return Path.home() / "Local-Models"
-
-
-# Both libraries read HF_HOME at import time, so this must run before either is
-# imported. Respects an existing override if present.
-os.environ.setdefault("HF_HOME", str(_default_hf_home()))
-
-import tempfile  # noqa: E402
-from typing import Protocol, runtime_checkable  # noqa: E402
-
-from PIL import Image  # noqa: E402
+from PIL import Image
 
 DEFAULT_MODEL = "mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit"
 PAGE_SEPARATOR = "\n\n---\n\n"  # a horizontal rule between pages

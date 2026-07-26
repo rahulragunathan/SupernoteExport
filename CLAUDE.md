@@ -15,8 +15,8 @@ A local CLI that converts Supernote `.note` files into an Obsidian-ready **PDF**
 - `convert.py` — `supernotelib` wrapper: `note_to_pdf` + `note_to_page_images`
   (pre-render downscale to `--max-pixels`); owns `DEFAULT_MAX_PIXELS`.
 - `transcribe.py` — `Transcriber` protocol + `MlxVlmTranscriber` (MLX-VLM) +
-  `assemble_transcription` (pure page-joining, deterministically tested). Sets
-  `HF_HOME` at import; imports MLX lazily inside methods.
+  `assemble_transcription` (pure page-joining, deterministically tested). Touches no
+  environment variables; imports MLX lazily inside methods.
 - `writer.py` — `build_markdown` (transcription on top, embed at bottom) + `write_note_outputs`.
 - `pipeline.py` — orchestrates discover → convert → transcribe → write; per-note
   try/except; returns a `Summary`.
@@ -40,11 +40,15 @@ here in CLAUDE.md.
 
 ## Key invariants — do not break
 
-- **`HF_HOME` is set before any HF/mlx import.** Model weights go to `HF_HOME`
-  (default `~/Local-Models` via `_default_hf_home()`), set at the top of
-  `transcribe.py`. Keep that ordering — those libraries read the variable at
-  import time, so only stdlib imports may precede the `os.environ.setdefault`
-  call.
+- **Never set `HF_HOME` (or any env var) from library code.** Weights belong wherever
+  Hugging Face caches them — `~/.cache/huggingface` unless the *user* exports
+  `HF_HOME`. Forcing a location at module scope was tried and deliberately removed: it
+  imposed a non-standard cache and, because HF and MLX read the variable at import
+  time, pushed every import in the module below the assignment (`# noqa: E402`
+  throughout). If a weights location is ever needed again it belongs in the user's
+  shell profile, or in a CLI flag applied in `cli.py` before anything imports
+  `huggingface_hub` — never at module scope. `tests/test_transcribe.py` guards this
+  with a subprocess import probe.
 - **MLX is imported lazily** (inside `MlxVlmTranscriber` methods) so `--no-transcribe`
   and the whole test suite run without loading a multi-GB model.
 - **Naming is deterministic and filesystem-independent** — reproducible across runs
@@ -61,9 +65,14 @@ here in CLAUDE.md.
 
 ## Environment
 
-- Python **3.13** (homebrew `/opt/homebrew/bin/python3.13`). Not 3.14 — deps lack wheels.
-- `python3.13 -m venv .venv` → `pip install -r requirements-dev.txt` (which is just
-  `-e ".[dev,transcribe]"`).
+- Python **3.13**. Not 3.14 — deps lack wheels.
+- `uv venv --python 3.13 .venv` → `uv pip install -e .[dev,transcribe]`. uv supplies its
+  own 3.13 build, so this works whether or not homebrew `python@3.13` is installed
+  (homebrew's `python3` may be 3.14, which this project can't use). Plain
+  `python3.13 -m venv .venv` + `pip install -r requirements-dev.txt` is equivalent when a
+  3.13 interpreter is on PATH.
+- `requirements-dev.txt` keeps `-e .[dev,transcribe]` **unquoted** — pip tolerates the
+  quotes, uv's requirements parser rejects them.
 
 ## Packaging
 
