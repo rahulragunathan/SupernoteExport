@@ -1,3 +1,4 @@
 # Development install: the package (editable) with its dev + transcription extras.
 # Version constraints live in pyproject.toml (single source).
--e ".[dev,transcribe]"
+# Unquoted on purpose: pip tolerates the quotes, uv's parser rejects them.
+-e .[dev,transcribe]

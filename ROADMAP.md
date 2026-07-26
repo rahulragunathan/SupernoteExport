@@ -34,6 +34,12 @@ Milestones and their completion; PR reference for anything Done.
   **investigated and closed as not viable** — the pre-render downscale stays (see
   Resolved).
 
+- **Phase 6 — Standard Hugging Face cache location: In progress** (unmerged).
+  `transcribe.py` no longer sets `HF_HOME`; weights go to `~/.cache/huggingface`
+  unless the user exports `HF_HOME` themselves. Removes `_default_hf_home()`, the
+  module-level `os.environ.setdefault`, and the `# noqa: E402` import ordering it
+  required. Guarded by a subprocess import probe in `tests/test_transcribe.py`.
+
 ## Known Issues
 
 None currently. (Reproducible bugs go here; non-bug caveats are under Notes, open
@@ -138,14 +144,25 @@ Least-confident areas and open risks.
   that the chosen cap is safe for the chosen model — the `vlm` eval covers only the
   default model, and only when cached. Silent empty output on an untested model+cap
   combination remains possible; `--max-pixels` is the manual lever.
-- **`_default_hf_home()` assumes `Path.home()` resolves.** Raises `RuntimeError` if
-  the home directory can't be determined (no `HOME`, some CI sandboxes). Acceptable
-  for a local CLI on macOS; would need a guard if run in a container.
+- **Nothing verifies where weights actually landed.** With `HF_HOME` no longer set by
+  the tool, a user who expected `~/Local-Models` but never exported `HF_HOME` silently
+  gets a second copy in `~/.cache/huggingface`. The failure mode is disk use and a
+  re-download, not wrong output, so there's no runtime check — `hf cache scan` is the
+  manual lever.
 
 ## Notes
 
 - Reading `.note` files from a cloud-synced folder (Google Drive File Stream,
   iCloud, Dropbox) is slow, since files download on demand. A slow folder run is
   input I/O, not a conversion bug — conversion itself is ~1 s/note.
-- Python 3.14 is unsupported (dependency wheels); supported range is 3.10–3.13.
+- Python 3.14 is unsupported (dependency wheels); supported range is 3.10–3.13. If
+  Homebrew's `python@3.13` is gone (only 3.14 remains), `uv venv --python 3.13` builds
+  the venv without adding a second CPython to the Homebrew tree.
+- **Keeping weights outside `~/.cache/huggingface` is a shell-profile decision, not a
+  tool setting.** Hugging Face resolves its cache from `HF_HOME` (or the narrower
+  `HF_HUB_CACHE`) and never searches for an existing tree, so `export
+  HF_HOME=~/Local-Models` in `~/.zshrc` is what points every HF tool — this one
+  included — at a shared location. Weights under a cache the env vars don't name are
+  simply invisible; `hf cache scan` lists what's where, `hf cache delete` reclaims
+  duplicates.
 - PySN was considered and not adopted; `supernotelib` covers all conversion needs.
