@@ -6,7 +6,9 @@ note** whose body is a local vision-language-model transcription of the
 handwriting, with the PDF embedded at the bottom.
 
 Everything runs on-device. There is no server, no queue, no database, and no
-network call at conversion time.
+network call at conversion time — the one exception being the first transcription
+run, which downloads the model weights into the local Hugging Face cache; after
+that, conversion is fully offline.
 
 ![SupernoteExport architecture](docs/architecture/supernote-export-architecture.png)
 
