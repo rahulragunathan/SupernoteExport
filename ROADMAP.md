@@ -42,8 +42,41 @@ Milestones and their completion; PR reference for anything Done.
 
 ## Known Issues
 
-None currently. (Reproducible bugs go here; non-bug caveats are under Notes, open
-risks under Unknowns.)
+Found by the 2026-08-10 repo review (internal `/code-review high` + external
+Codex/Gemini via `/review-checkpoint repo`); all verified against the code. None
+observed in real runs to date.
+
+- **Naming collision: generated suffix vs. verbatim stem** *(all three reviewers,
+  confirmed)*. `plan_output_names` disambiguates only on *base* names and never
+  reserves the final suffixed names. A folder with `20250817_120000.note`,
+  `20250817_130000.note`, and a note renamed on-device to `2025-08-17-2` plans
+  `2025-08-17-2` **twice** (the verbatim stem sorts first, `-` < `0`): the second
+  note is then silently skipped as "exists" — or, with `--overwrite`, clobbers the
+  first pair. Fix shape: allocate from a per-directory reserved-name set.
+- **Skip-on-rerun checks only the `.md`** *(three reviewers)*. A note whose `.pdf`
+  was lost (cloud-sync conflict, aborted run — writes are sequential, not atomic)
+  but whose `.md` survives is skipped forever; its `![[…]]` embed stays broken until
+  `--overwrite`. Fix shape: require the companion `.pdf` before skipping; consider
+  temp-file + atomic rename in `write_note_outputs`.
+- **Half-loaded transcriber poisons the rest of a batch.** `_ensure_loaded` assigns
+  `self._model` before `load_config` runs; if the latter raises (e.g. network error
+  on a partially cached model), the per-note catch swallows it and every later note
+  skips loading and fails on `_config=None` with an unrelated error. Fix shape: set
+  all three attributes only after all loads succeed.
+- **`_strip_code_fence` corrupts a transcription that genuinely starts with a code
+  block** — it deletes the real opening ` ``` ` and orphans the closing one, turning
+  the rest of the page into a code block in Obsidian. Only bites notes whose first
+  line is a fenced snippet.
+- **Bad `--input` prints a raw traceback.** `discover_notes` raises
+  `ValueError`/`FileNotFoundError` outside the per-note try, and `cli.main` has no
+  handler — a typo'd path crashes instead of printing a one-line error.
+- **Missing `[transcribe]` extra fails late and per-note** *(Gemini)*. A base
+  install run without `--no-transcribe` renders every note's PDF, then fails each
+  note with `ModuleNotFoundError: mlx_vlm` inside the batch loop. Fix shape:
+  pre-flight the import in `cli.py` with a `pip install …[transcribe]` hint.
+- **Square brackets in a note name corrupt the Obsidian embed** *(Gemini)*. A note
+  renamed to e.g. `Project [v2]` yields `![[Project [v2].pdf]]`, which breaks
+  Obsidian's wiki-link parsing.
 
 ## Enhancements
 
@@ -54,6 +87,36 @@ Unscheduled unless a schedule is noted on the item.
 - **Watch/auto-sync mode** — deferred by design; invocation stays ad-hoc.
 - **Model comparison harness** — quick side-by-side of the shortlisted models on a
   handful of real pages, to pick empirically if the default disappoints.
+
+From the 2026-08-10 repo review:
+
+- **Load each notebook once** — `note_to_pdf` and `note_to_page_images` each call
+  `sn.load_notebook` on the same file, so every note is read and parsed twice; on
+  cloud-synced input (the documented slow path) that doubles the dominant I/O cost.
+- **Detect all-empty transcription** *(Codex)* — an empty VLM result on a non-empty
+  note is currently written as a normal-looking embed-only `.md` (the resolution-
+  cliff signature). Warn or record a distinct per-note outcome; note the inherent
+  ambiguity with genuinely blank notes.
+- **Validate library-seam options** *(internal + Codex)* — `page_markers` and
+  `pdf_mode` are validated only by argparse; passed programmatically, an invalid
+  value silently degrades to `none`/raster. Also decide whether `--max-pixels <= 0`
+  (currently a silent full-resolution escape hatch, tested behavior) should be
+  rejected or documented as an explicit unsafe opt-out.
+- **Discovery robustness** *(Gemini + internal)* — filter `rglob` hits with
+  `is_file()` (a *directory* named `*.note` currently enters the batch and fails
+  per-note) and consider case-insensitive `.NOTE` matching.
+- **Test coverage additions** *(Gemini)* — per-note failure recovery (the
+  `try/except` in `pipeline.run` is untested), `cli.main` exit codes and summary
+  output, and vector `--pdf-mode` (raster is covered via the pipeline test's
+  `%PDF-` assertion).
+- **Consolidate fixture constants** *(Gemini)* — `SAMPLE_NOTE`/`SAMPLE_STEM`/
+  `SAMPLE_PAGES` are duplicated across three test modules; a `tests/conftest.py`
+  would single-source them.
+- **Packaging metadata alignment** *(Codex + Gemini)* — `requires-python = ">=3.10"`
+  has no `<3.14` bound although docs everywhere say 3.14 is unsupported, so pip on
+  3.14 will attempt an install that dies on dependency wheels. Also reconsider the
+  lone `Operating System :: MacOS` classifier given the base (PDF-only) install is
+  cross-platform.
 
 ## Resolved
 
@@ -132,6 +195,30 @@ Delivered three Enhancement items in one phase:
 - **Homebrew `python@3.13` can vanish** (only `python@3.14` remains), which kills the
   venv since its interpreter is gone. `uv venv --python 3.13` rebuilds it without
   adding a second CPython to the Homebrew tree; both routes are documented.
+
+### Repo review (2026-08-10, no in-flight branch)
+
+Full-repo health check: internal `/code-review high` over `src/` + `tests/`, plus
+external Codex (agentic, read-only) and Gemini (inlined source) reviews. 40/40
+tests green, ruff clean going in. Two doc-drift items were fixed in the pass
+itself; every code finding was triaged into Known Issues / Enhancements above
+(none observed in real runs, so nothing was hot-fixed):
+
+1. **Stale `test_vlm_eval.py` docstring** *(internal + Codex)* — claimed `HF_HOME`
+   is "set on import of `transcribe`", the exact behavior PR #7 removed and the
+   CLAUDE.md never-set-`HF_HOME` invariant forbids. Rewritten to describe the
+   standard-cache behavior.
+2. **ARCHITECTURE "no network call at conversion time"** *(Codex)* — contradicted
+   the documented first-run weight download; now qualified (offline once weights
+   are cached).
+
+Rejected reviewer findings (verified against the code before dismissal): the
+`max(1, …)` downscale-cap escape (unreachable for Supernote's fixed 1920×2560
+pages), argparse prefix-matching on `--page-separators` (no longer a prefix of any
+flag), `Image.LANCZOS` deprecation (still a valid alias in current Pillow), and
+"`note_to_pdf` has no tests" (raster mode is exercised by the pipeline integration
+test's `%PDF-` assertion; only vector mode is uncovered — tracked under
+Enhancements).
 
 ### Runtime validation (2026-07-17)
 

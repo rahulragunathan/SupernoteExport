@@ -52,9 +52,10 @@ EXPECTED_ANCHORS = [
 def _require_cached_model() -> None:
     """Skip unless the model is loadable offline — never trigger a download.
 
-    Gates on ``config.json`` being in the local HF cache (under ``HF_HOME``, set on
-    import of ``transcribe``). ``try_to_load_from_cache`` returns the file's path as
-    a ``str`` when cached, or a non-``str`` sentinel otherwise, without any network.
+    Gates on ``config.json`` being in the local HF cache (``~/.cache/huggingface``
+    unless the user exports ``HF_HOME``; this repo never sets it — see CLAUDE.md).
+    ``try_to_load_from_cache`` returns the file's path as a ``str`` when cached, or
+    a non-``str`` sentinel otherwise, without any network.
 
     We deliberately do *not* use ``snapshot_download(local_files_only=True)``: it
     demands every file in the repo, so a model that ``mlx_vlm`` loaded fine — but
