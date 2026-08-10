@@ -42,7 +42,7 @@ Milestones and their completion; PR reference for anything Done.
 
 ## Known Issues
 
-Found by the 2026-08-10 repo review (internal `/code-review high` + external
+Found by the 2026-08-10 repo review (PR #9: internal `/code-review high` + external
 Codex/Gemini via `/review-checkpoint repo`); all verified against the code. None
 observed in real runs to date.
 
@@ -196,7 +196,7 @@ Delivered three Enhancement items in one phase:
   venv since its interpreter is gone. `uv venv --python 3.13` rebuilds it without
   adding a second CPython to the Homebrew tree; both routes are documented.
 
-### Repo review (2026-08-10, no in-flight branch)
+### PR #9 — repo review (2026-08-10, no in-flight branch)
 
 Full-repo health check: internal `/code-review high` over `src/` + `tests/`, plus
 external Codex (agentic, read-only) and Gemini (inlined source) reviews. 40/40
