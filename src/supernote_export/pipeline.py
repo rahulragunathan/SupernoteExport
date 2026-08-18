@@ -39,7 +39,8 @@ def run(
 ) -> Summary:
     """Convert every note under ``input_path`` into ``output_root``.
 
-    Notes whose ``.md`` already exists are skipped unless ``overwrite``. A single
+    A note is skipped when both of its outputs (``.md`` and ``.pdf``) already
+    exist, unless ``overwrite``; a half-written pair is converted again. A single
     failing note is recorded and the batch continues. Transcription runs only when
     a ``transcriber`` is supplied. ``on_progress``, if given, is called once per note
     (see ``ProgressCallback``) — before the slow conversion, so a caller can show a
@@ -55,8 +56,11 @@ def run(
     summary = Summary()
     for index, (note_path, out_dir, name) in enumerate(planned, start=1):
         md_path = out_dir / f"{name}.md"
+        pdf_path = out_dir / f"{name}.pdf"
         try:
-            if md_path.exists() and not overwrite:
+            # Both files must be there. A surviving .md whose .pdf is gone would
+            # otherwise be skipped forever behind a broken embed.
+            if not overwrite and md_path.exists() and pdf_path.exists():
                 if on_progress is not None:
                     on_progress(index, total, note_path, "skip")
                 summary.skipped.append(md_path)

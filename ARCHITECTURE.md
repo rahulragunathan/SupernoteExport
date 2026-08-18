@@ -64,9 +64,13 @@ variables, so model weights land in the standard Hugging Face cache
 other Hugging Face tool.
 
 **Naming is deterministic and filesystem-independent.** `plan_output_names()`
-disambiguates from input order alone — it never probes the disk — so a rerun
-produces identical names. That's what makes skip-on-rerun and `--overwrite`
-stable rather than order-dependent.
+works in two passes. The first reserves the stems you chose on the device; the
+second hands out date-derived names around them. So a name you picked is never
+taken by a generated suffix, whatever the input order. It disambiguates from
+input order alone and never probes the disk, so a rerun produces identical names.
+That's what makes skip-on-rerun and `--overwrite` stable rather than
+order-dependent. Names are stable *within* a run: two runs that see different
+notes still hand out different names (see ROADMAP).
 
 **One bad note cannot abort a batch.** `pipeline.run()` wraps each note in
 `try/except`, records the failure in `Summary.failed`, and continues. The CLI
@@ -95,9 +99,14 @@ math implies ~2.36M — both empirically produce empty output).
                                                         <name>.md   ◄─────┘
 ```
 
-Skip logic short-circuits before any conversion: if `<name>.md` exists and
-`--overwrite` wasn't passed, the note is recorded as skipped and neither
-renderer runs.
+Skip logic short-circuits before any conversion: if both `<name>.md` and
+`<name>.pdf` exist and `--overwrite` wasn't passed, the note is recorded as
+skipped and neither renderer runs. Requiring both is what stops a lost PDF from
+leaving a broken embed for good. `write_note_outputs` stages each artifact in a
+temp file and renames it into place, so a file that exists is one that was
+written in full — which is what makes "it exists" a sound proxy for "it was
+converted". It is not a durability guarantee, and the two renames are not one
+transaction (see ROADMAP).
 
 ## Testing strategy
 
