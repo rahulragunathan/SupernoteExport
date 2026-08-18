@@ -95,10 +95,12 @@ supernote-export --input note.note --output ./out
 | `--max-pixels` | `1500000` | Cap on page-image pixels fed to the VLM (pages are downscaled to fit before transcription). The default is tuned for reliable transcription; see [ARCHITECTURE.md](ARCHITECTURE.md) before raising it. |
 | `--page-markers` | `none` | Page separation in the transcription: `none` (blank line), `line-break` (`---` rule), or `page-numbers` (`## Page N` headers, aligned to the PDF's page numbers). |
 | `--no-transcribe` | off | PDF only; the `.md` holds just the embed (fast, no model). |
-| `--overwrite` | off | Re-convert even if the `.md` exists (default: skip → idempotent). |
+| `--overwrite` | off | Re-convert notes even if their outputs exist (default: skip a note whose `.md` and `.pdf` are both present → idempotent). |
 
 **Output naming.** A timestamp stem (`20250817_132236.note`) becomes `2025-08-17`;
 a note you renamed on-device keeps its name. Same-date collisions get `-2`, `-3`.
+A name you chose on the device is reserved before any date-derived name is handed
+out, so a generated suffix never takes it.
 
 **Progress.** During a run, a per-note line (`[3/12] Converting …`) is printed to
 stderr as each note is processed, followed by the final summary.

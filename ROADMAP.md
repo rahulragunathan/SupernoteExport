@@ -42,22 +42,32 @@ Milestones and their completion; PR reference for anything Done.
 
 ## Known Issues
 
-Found by the 2026-08-10 repo review (PR #9: internal `/code-review high` + external
-Codex/Gemini via `/review-checkpoint repo`); all verified against the code. None
-observed in real runs to date.
+Found by two reviews: the PR #9 repo review (internal `/code-review high`, Codex,
+and Gemini) and a later full-codebase review by GPT-5.6-Sol. Each one was checked
+against the code. None has shown up in a real run yet.
 
-- **Naming collision: generated suffix vs. verbatim stem** *(all three reviewers,
-  confirmed)*. `plan_output_names` disambiguates only on *base* names and never
-  reserves the final suffixed names. A folder with `20250817_120000.note`,
-  `20250817_130000.note`, and a note renamed on-device to `2025-08-17-2` plans
-  `2025-08-17-2` **twice** (the verbatim stem sorts first, `-` < `0`): the second
-  note is then silently skipped as "exists" — or, with `--overwrite`, clobbers the
-  first pair. Fix shape: allocate from a per-directory reserved-name set.
-- **Skip-on-rerun checks only the `.md`** *(three reviewers)*. A note whose `.pdf`
-  was lost (cloud-sync conflict, aborted run — writes are sequential, not atomic)
-  but whose `.md` survives is skipped forever; its `![[…]]` embed stays broken until
-  `--overwrite`. Fix shape: require the companion `.pdf` before skipping; consider
-  temp-file + atomic rename in `write_note_outputs`.
+- **Names shift between runs.** Each run works out names from the notes it can
+  see, so two runs that see different notes hand out different names. Convert one
+  note from 17 August today and a second one tomorrow: both are named
+  `2025-08-17`, and the tool skips the second without a word. A note that syncs
+  down late shifts every suffix in that folder, so older notes get skipped and one
+  note is written twice. Reserving names inside a run does not help — PR #<N> does
+  exactly that and this still stands. The tool has to remember which note produced
+  which file, which needs its own phase.
+- **A stray PDF gets overwritten.** If `<name>.pdf` exists in the output folder
+  but `<name>.md` does not, the run converts the note and replaces that PDF, even
+  without `--overwrite`. A PDF that came from somewhere else is gone.
+- **A dropped page looks like a blank page.** The model sometimes returns nothing
+  for one page. `assemble_transcription` drops empty pages, so that page vanishes
+  from the Markdown. With `--page-markers page-numbers` the gap looks exactly like
+  a page that was blank on purpose.
+- **A long page is cut off in silence.** `_transcribe_one` stops at 4,096 tokens
+  and keeps only the text. `mlx-vlm` reports `finish_reason == "length"` when it
+  hits that cap, and we ignore it. A dense page is written out as a finished note.
+- **Indentation on a page's first line is stripped.** `assemble_transcription` and
+  `_strip_code_fence` both call `strip()`. If a page starts with an indented list
+  or block, that indent is lost — the opposite of what the prompt asks the model
+  to preserve.
 - **Half-loaded transcriber poisons the rest of a batch.** `_ensure_loaded` assigns
   `self._model` before `load_config` runs; if the latter raises (e.g. network error
   on a partially cached model), the per-note catch swallows it and every later note
@@ -74,9 +84,10 @@ observed in real runs to date.
   install run without `--no-transcribe` renders every note's PDF, then fails each
   note with `ModuleNotFoundError: mlx_vlm` inside the batch loop. Fix shape:
   pre-flight the import in `cli.py` with a `pip install …[transcribe]` hint.
-- **Square brackets in a note name corrupt the Obsidian embed** *(Gemini)*. A note
-  renamed to e.g. `Project [v2]` yields `![[Project [v2].pdf]]`, which breaks
-  Obsidian's wiki-link parsing.
+- **Some filenames break the embed.** `build_markdown` drops the filename straight
+  into `![[...]]`. Obsidian reads `[` and `]` as link syntax, `|` as an alias, and
+  `#` as a heading link, so a note called `Status #2` or `A|B` points at the wrong
+  file or fails to embed.
 
 ## Enhancements
 
@@ -117,10 +128,34 @@ From the 2026-08-10 repo review:
   3.14 will attempt an install that dies on dependency wheels. Also reconsider the
   lone `Operating System :: MacOS` classifier given the base (PDF-only) install is
   cross-platform.
+- **Stream pages instead of holding them all** — `note_to_page_images` builds every
+  page image before the model sees any of them, and the `list[Image]` protocol
+  writes that into the design. An iterator would cut memory on long notebooks and
+  pairs well with loading each notebook once.
+- **Make the eval's cache check honest** — `_require_cached_model` looks only for
+  `config.json`, so a partly cached model can still download gigabytes when you run
+  `pytest -m vlm`.
 
 ## Resolved
 
 Closed issues and end-of-phase review findings, by PR.
+
+### PR #<N> — output naming and skip integrity
+
+Two of the seven bugs from the PR #9 review. Both came from the pipeline trusting
+a signal that did not mean what it assumed.
+
+1. **One run could plan the same name twice.** `plan_output_names` counted base
+   names and never reserved the finished ones, so a note renamed on the device to
+   `2025-08-17-2` and a date-derived `2025-08-17-2` could both be planned. The
+   second note was then skipped as done, or overwritten with `--overwrite`. Names
+   are now allocated in two passes: stems you chose on the device are reserved
+   first, so a generated suffix can never take one. Three tests pin it, including
+   the reachable sorted order.
+2. **A rerun trusted the `.md` alone.** A note whose `.pdf` was lost stayed skipped
+   forever behind a broken embed. `run` now needs both files before it skips, and
+   `write_note_outputs` stages both files and renames them into place, so a file
+   that exists is one that was written in full.
 
 ### Phase 1 (baseline)
 
@@ -233,7 +268,8 @@ Enhancements).
 Least-confident areas and open risks.
 
 - **mlx-vlm API stability.** `generate`/`apply_chat_template` signatures were pinned
-  against installed 0.6.5. A future upgrade could shift them; the transcriber is small
+  against 0.6.5; 0.6.10 is installed today and the suite is green. A future upgrade
+  could shift them; the transcriber is small
   and isolated, so a break is contained to `transcribe.py`. (We do **not** rely on
   `load(**kwargs)` forwarding processor args — PR #5 found that path silently discards
   `max_pixels`, which is why the pixel cap is a pre-render downscale in `convert.py`.)
@@ -249,8 +285,19 @@ Least-confident areas and open risks.
   re-download, not wrong output, so there's no runtime check — `hf cache scan` is the
   manual lever.
 
+- **How name comparison lines up with filesystem rules.** Planned names are compared
+  as raw Python strings, while macOS ignores case and Unicode normalization
+  differences. Two names we treat as separate could point at one file. On this Mac's
+  APFS volume the two source files cannot sit in one folder anyway, so this matters
+  mainly on case-sensitive volumes.
+
 ## Notes
 
+- The PDF and the Markdown are written as two steps, not one. Each file lands
+  atomically, but an interrupted `--overwrite` can leave a new PDF beside the old
+  Markdown. Both files exist, so the next run skips the note. Closing this needs a
+  marker written after both land, which is a lot of machinery for a gap of two
+  operations.
 - Reading `.note` files from a cloud-synced folder (Google Drive File Stream,
   iCloud, Dropbox) is slow, since files download on demand. A slow folder run is
   input I/O, not a conversion bug — conversion itself is ~1 s/note.

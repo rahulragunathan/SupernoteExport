@@ -86,3 +86,26 @@ def test_no_transcriber_yields_embed_only_markdown(tmp_path):
     assert len(summary.converted) == 1
     md = (tmp_path / f"{SAMPLE_STEM}.md").read_text(encoding="utf-8")
     assert md == f"![[{SAMPLE_STEM}.pdf]]\n"
+
+
+def test_missing_pdf_forces_reconversion_without_overwrite(tmp_path):
+    run(SAMPLE_NOTE, tmp_path, transcriber=FakeTranscriber())
+    (tmp_path / f"{SAMPLE_STEM}.pdf").unlink()
+
+    fake = FakeTranscriber()
+    second = run(SAMPLE_NOTE, tmp_path, transcriber=fake)
+
+    assert not second.skipped, "a half-written pair must not count as done"
+    assert len(second.converted) == 1
+    assert (tmp_path / f"{SAMPLE_STEM}.pdf").exists()
+    assert fake.calls == [SAMPLE_PAGES]
+
+
+def test_missing_markdown_forces_reconversion_without_overwrite(tmp_path):
+    run(SAMPLE_NOTE, tmp_path, transcriber=FakeTranscriber())
+    (tmp_path / f"{SAMPLE_STEM}.md").unlink()
+
+    second = run(SAMPLE_NOTE, tmp_path, transcriber=FakeTranscriber())
+
+    assert not second.skipped
+    assert (tmp_path / f"{SAMPLE_STEM}.md").exists()

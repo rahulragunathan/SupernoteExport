@@ -42,3 +42,39 @@ def test_plan_output_names_disambiguation_is_scoped_per_directory():
     names = [name for _, _, name in plan_output_names(entries)]
     # Same date in different output dirs must NOT collide.
     assert names == ["2025-08-17", "2025-08-17"]
+
+
+def test_renamed_note_keeps_a_name_a_generated_suffix_would_want():
+    out = Path("/out")
+    # Discovery sorts '-' before '0', so this order really happens.
+    entries = [
+        (Path("/in/2025-08-17-2.note"), out),
+        (Path("/in/20250817_120000.note"), out),
+        (Path("/in/20250817_130000.note"), out),
+    ]
+    names = [name for _, _, name in plan_output_names(entries)]
+    assert names == ["2025-08-17-2", "2025-08-17", "2025-08-17-3"]
+
+
+def test_renamed_note_wins_regardless_of_position():
+    # Order robustness of the function itself. Discovery always yields the
+    # renamed note first for these three names in one directory.
+    out = Path("/out")
+    entries = [
+        (Path("/in/20250817_120000.note"), out),
+        (Path("/in/20250817_130000.note"), out),
+        (Path("/in/2025-08-17-2.note"), out),
+    ]
+    names = [name for _, _, name in plan_output_names(entries)]
+    assert names == ["2025-08-17", "2025-08-17-3", "2025-08-17-2"]
+
+
+def test_note_renamed_to_a_bare_date_claims_it():
+    out = Path("/out")
+    entries = [
+        (Path("/in/20250817_120000.note"), out),
+        (Path("/in/20250817_130000.note"), out),
+        (Path("/in/2025-08-17.note"), out),
+    ]
+    names = [name for _, _, name in plan_output_names(entries)]
+    assert names == ["2025-08-17-2", "2025-08-17-3", "2025-08-17"]
