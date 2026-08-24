@@ -90,6 +90,13 @@ checked against the code. None has shown up in a real run yet.
   `self._model` before it loads the config. If the config load fails, the per-note
   handler swallows the error, and every later note skips loading and fails with an
   unrelated one. Set all three attributes only after every load succeeds.
+- **Installing on Python 3.14 fails halfway instead of being refused.**
+  `pyproject.toml` declares `requires-python = ">=3.10"` with no upper bound, so pip
+  and uv treat 3.14 as supported. They accept it, start resolving, and then die
+  building a dependency that has no 3.14 wheel. Every doc says 3.14 does not work,
+  so the metadata is what is wrong. Change it to `">=3.10,<3.14"`, which makes the
+  installer refuse the version up front with a clear message. Lift the bound when
+  the dependencies publish 3.14 wheels.
 
 ### Markdown output can break in Obsidian
 
@@ -130,10 +137,9 @@ Not scheduled unless the item says so.
   test's `%PDF-` check.
 - **Share the fixture constants** — `SAMPLE_NOTE`, `SAMPLE_STEM`, and `SAMPLE_PAGES`
   are copied into three test modules. A `tests/conftest.py` would hold one copy.
-- **Fix the packaging metadata** — `requires-python` has no `<3.14` bound, though
-  every doc says 3.14 does not work, so pip will start an install that cannot find
-  wheels. The `Operating System :: MacOS` classifier is also wrong for the PDF-only
-  install.
+- **Fix the `Operating System :: MacOS` classifier** — `pyproject.toml` lists it,
+  but the base PDF-only install runs on any platform. Only transcription needs
+  macOS, and that is already gated behind the `[transcribe]` extra.
 - **Make the eval's cache check honest** — `_require_cached_model` looks only for
   `config.json`, so a partly cached model can still download gigabytes when you run
   `pytest -m vlm`.
