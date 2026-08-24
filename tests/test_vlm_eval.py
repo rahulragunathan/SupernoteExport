@@ -5,20 +5,20 @@ pyproject.toml); run it explicitly with:
 
     pytest -m vlm
 
-Two deliberate design choices distinguish it from the `supernotelib` integration
-test in ``test_pipeline.py``:
+Two choices set it apart from the `supernotelib` integration test in
+``test_pipeline.py``:
 
-- **It skips when the model isn't cached**, rather than failing. The fixture is
-  cheap and always present, so its test fails loud when missing; the model is a
-  large, optional artifact, so its eval skips when absent. Fail-vs-skip tracks
-  whether the dependency is cheap-and-guaranteed or expensive-and-optional.
-- **It asserts tolerant properties, not an exact transcription.** VLM output drifts
-  across model and mlx-vlm versions, so an exact-match golden file would be
-  perpetually flaky. The real job here is to catch the image-resolution cliff
-  (ROADMAP): above ~2M px the model silently returns an *empty* generation, which
-  surfaced as embed-only `.md` files. This eval runs the full pipeline (real
-  render + pixel cap + real model) and asserts the output is non-empty and carries
-  a few clearly-printed anchors — the exact signal that regression would erase.
+- **It skips when the model is not cached, instead of failing.** The fixture is
+  cheap and always there, so its test fails loudly when it goes missing. The model
+  is large and optional, so its eval skips when absent. Fail or skip tracks whether
+  the dependency is cheap and guaranteed, or expensive and optional.
+- **It asserts tolerant properties, not an exact transcription.** Model output
+  drifts between model and mlx-vlm versions, so a golden file would be flaky
+  forever. The real job is to catch the image-resolution cliff (see ROADMAP): above
+  about 2M pixels the model silently returns an empty generation, which showed up as
+  embed-only `.md` files. This eval runs the full pipeline — real render, real pixel
+  cap, real model — and checks that the output is not empty and carries a few
+  clearly printed anchors. That is exactly the signal such a regression erases.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Command-line entrypoint: ``python -m supernote_export``."""
+"""Command-line entry point: ``python -m supernote_export``."""
 
 from __future__ import annotations
 
@@ -21,56 +21,57 @@ def build_parser() -> argparse.ArgumentParser:
         "--input",
         required=True,
         type=Path,
-        help="A single .note file or a folder of them (searched recursively).",
+        help="A single .note file, or a folder of them searched recursively.",
     )
     parser.add_argument(
         "--output",
         required=True,
         type=Path,
-        help="Output folder; the input's subfolder tree is mirrored under it.",
+        help="Output folder. The input's subfolder tree is mirrored under it.",
     )
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help=f"MLX-VLM model for transcription (default: {DEFAULT_MODEL}).",
+        help=f"MLX-VLM model used for transcription (default: {DEFAULT_MODEL}).",
     )
     parser.add_argument(
         "--pdf-mode",
         choices=("raster", "vector"),
         default="raster",
-        help="Embedded PDF rendering: raster (pixel-exact, default) or vector (traced).",
+        help="Embedded PDF: raster is pixel-exact (default), vector traces the strokes.",
     )
     parser.add_argument(
         "--max-pixels",
         type=int,
         default=DEFAULT_MAX_PIXELS,
-        help="Cap on the page-image pixels fed to the VLM (default: "
-        f"{DEFAULT_MAX_PIXELS:,}). Native ~4.9M reliably breaks Qwen3-VL; keep this "
-        "well under ~2M.",
+        help="Cap on the page images sent to the model (default: "
+        f"{DEFAULT_MAX_PIXELS:,}). A full page is about 4.9M pixels, which reliably "
+        "breaks Qwen3-VL, so keep this well under 2M.",
     )
     parser.add_argument(
         "--page-markers",
         choices=PAGE_MARKER_CHOICES,
         default="none",
-        help="How to separate pages in the transcription: 'none' (blank line, "
-        "default), 'line-break' ('---' rule), or 'page-numbers' ('## Page N' "
-        "headers, addressable and aligned to the PDF's page numbers).",
+        help="How pages are separated in the transcription: 'none' is a blank line "
+        "(default), 'line-break' is a '---' rule, and 'page-numbers' adds "
+        "'## Page N' headings that match the PDF's page numbers.",
     )
     parser.add_argument(
         "--no-transcribe",
         action="store_true",
-        help="Only produce PDFs (skip the VLM); the .md holds just the embed.",
+        help="Produce PDFs only, skipping the model. The .md holds just the embed.",
     )
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Re-convert notes even if their .md already exists (default: skip).",
+        help="Convert a note again even when its outputs exist. By default a note is "
+        "skipped once both its .md and .pdf are there.",
     )
     return parser
 
 
 def _print_progress(current: int, total: int, note_path: Path, status: str) -> None:
-    """Emit one per-note progress line to stderr as the batch runs."""
+    """Print one line per note to stderr as the batch runs."""
     verb = "Skipping" if status == "skip" else "Converting"
     suffix = " (exists)" if status == "skip" else ""
     print(f"[{current}/{total}] {verb} {note_path.name}{suffix}", file=sys.stderr)
@@ -90,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
 
     transcriber = None
     if not args.no_transcribe:
-        # Imported lazily so --no-transcribe runs never load MLX.
+        # Imported here so a --no-transcribe run never loads MLX.
         from .transcribe import MlxVlmTranscriber
 
         transcriber = MlxVlmTranscriber(model=args.model, page_markers=args.page_markers)

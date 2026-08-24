@@ -1,10 +1,10 @@
-"""Local handwriting transcription via an MLX vision-language model.
+"""Transcribe handwriting locally with an MLX vision-language model.
 
-The transcriber sits behind the ``Transcriber`` protocol so the pipeline (and its
-tests) depend only on ``transcribe_pages``; the concrete ``MlxVlmTranscriber`` is
-the MLX-VLM implementation. Model weights go wherever Hugging Face caches them
-(``~/.cache/huggingface`` by default); this module deliberately imposes no
-location of its own — export ``HF_HOME`` to relocate them.
+The transcriber sits behind the ``Transcriber`` protocol, so the pipeline and its
+tests depend only on ``transcribe_pages``. ``MlxVlmTranscriber`` is the MLX-VLM
+implementation. Model weights go wherever Hugging Face caches them,
+``~/.cache/huggingface`` by default. This module sets no environment variables of
+its own — export ``HF_HOME`` to move them.
 """
 
 from __future__ import annotations
@@ -37,22 +37,22 @@ PROMPT = (
 def assemble_transcription(pages: list[str], page_markers: str) -> str:
     """Join per-page transcriptions into the note body.
 
-    ``pages`` holds one entry per *source* page in order (blank pages are empty
-    strings), so a page's 1-based index is its true page number. Blank pages are
-    dropped, but numbering is preserved — under ``"page-numbers"`` the header for a
-    page after a blank one keeps its real number (a gap, never a renumber), so the
-    headers line up with the embedded PDF's pages.
+    ``pages`` holds one entry per *source* page, in order, with blank pages as
+    empty strings. So a page's 1-based index is its real page number. Blank pages
+    are dropped, but their numbers are used up: under ``"page-numbers"``, the page
+    after a blank one keeps its real number. That leaves a gap rather than a
+    renumber, so the headings stay lined up with the embedded PDF.
 
     ``page_markers``:
-      - ``"none"``          — pages separated by a blank line.
-      - ``"line-break"``    — pages separated by a ``---`` horizontal rule.
-      - ``"page-numbers"``  — each page prefixed with a ``## Page N`` heading.
+      - ``"none"``          — a blank line between pages.
+      - ``"line-break"``    — a ``---`` rule between pages.
+      - ``"page-numbers"``  — a ``## Page N`` heading above each page.
     """
     blocks: list[str] = []
     for index, text in enumerate(pages):
         body = text.strip()
         if not body:
-            continue  # blank page — dropped, but its number is still consumed
+            continue  # blank page: dropped, but its number is still used up
         if page_markers == "page-numbers":
             blocks.append(f"## Page {index + 1}\n\n{body}")
         else:
@@ -62,11 +62,11 @@ def assemble_transcription(pages: list[str], page_markers: str) -> str:
 
 
 def _strip_code_fence(text: str) -> str:
-    """Remove an outer ``` / ```markdown fence the model may add despite the prompt."""
+    """Remove an outer ``` or ```markdown fence the model may add despite the prompt."""
     stripped = text.strip()
     if not stripped.startswith("```"):
         return stripped
-    lines = stripped.splitlines()[1:]  # drop the opening fence (and any language tag)
+    lines = stripped.splitlines()[1:]  # drop the opening fence and any language tag
     if lines and lines[-1].strip() == "```":
         lines = lines[:-1]  # drop the closing fence
     return "\n".join(lines).strip()
@@ -80,7 +80,7 @@ class Transcriber(Protocol):
 
 
 class MlxVlmTranscriber:
-    """Transcribe pages with an MLX vision-language model (default Qwen3-VL)."""
+    """Transcribe pages with an MLX vision-language model, Qwen3-VL by default."""
 
     def __init__(
         self,
@@ -121,10 +121,10 @@ class MlxVlmTranscriber:
 
     def transcribe_pages(self, images: list[Image.Image]) -> str:
         self._ensure_loaded()
-        # One entry per source page, in order (blank pages stay ""), so page numbering
-        # in `assemble_transcription` reflects true page positions.
+        # One entry per source page, in order, with blank pages left as "", so that
+        # assemble_transcription can key its page numbers to real page positions.
         transcriptions: list[str] = []
-        # mlx-vlm reads images from paths; write each page to a scratch file.
+        # mlx-vlm reads images from paths, so each page goes to a scratch file.
         with tempfile.TemporaryDirectory() as tmp:
             for index, image in enumerate(images):
                 page_path = Path(tmp) / f"page_{index}.png"
