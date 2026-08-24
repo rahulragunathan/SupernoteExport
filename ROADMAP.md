@@ -54,11 +54,21 @@ checked against the code. None has shown up in a real run yet.
   the tool skips the second without a word. A note that syncs down late shifts every
   suffix in that folder, so older notes get skipped and one note is written twice.
   Reserving names inside a run does not help — PR #10 does exactly that and this
-  still stands. The tool has to remember which note produced which file, which needs
-  its own phase.
+  still stands. `plan_output_names` works out names from one batch, and
+  `pipeline.run` then treats them as stable identities across runs. Two directions
+  worth weighing: keep a small mapping in the output folder, from source note to
+  output name, and consult it before allocating; or derive the name from something
+  in the note that never changes, so a note always lands on the same name. Both
+  change what an output name means and what happens to files already written, so
+  this needs its own phase and a decision on migrating existing output.
 - **A stray PDF gets overwritten.** If `<name>.pdf` exists in the output folder but
   `<name>.md` does not, the run converts the note and replaces that PDF, even
-  without `--overwrite`. A PDF that came from somewhere else is gone.
+  without `--overwrite`. A PDF that came from somewhere else is gone. The skip
+  branch in `pipeline.run` only asks whether both files exist, so a lone PDF falls
+  through to `write_note_outputs`. Decide what a lone PDF means: rebuild it as a
+  half-written output, which is what happens today and could simply be documented,
+  or refuse to touch a PDF that has no matching `.md` unless `--overwrite` is
+  passed. The second is safer in a shared Obsidian vault.
 
 ### Transcription can fail and still look successful
 
@@ -68,10 +78,15 @@ checked against the code. None has shown up in a real run yet.
   that was blank on purpose. When every page comes back empty, the result is an
   embed-only `.md` that still reports success — the signature of the resolution
   cliff in Resolved. A fix has to tell a blank page from a failed one without
-  trusting the model's own output.
+  trusting the model's own output. The rendered page image is the one place that
+  knows whether a page has ink on it, so `convert.note_to_page_images` is where that
+  signal can come from.
 - **A long page is cut off in silence.** `_transcribe_one` stops at 4,096 tokens and
   keeps only the text. `mlx-vlm` reports `finish_reason == "length"` when it hits
   that cap, and we ignore it. A dense page is written out as a finished note.
+  `_transcribe_one` already has the value in hand. Decide what to do with it: raise,
+  so `pipeline.run` records the note under `Summary.failed`, or keep the partial text
+  and warn through the `on_progress` callback.
 - **Indentation on a page's first line is stripped.** `assemble_transcription` and
   `_strip_code_fence` both call `strip()`. If a page starts with an indented list or
   block, that indent is lost — the opposite of what the prompt asks the model to
@@ -103,11 +118,17 @@ checked against the code. None has shown up in a real run yet.
 - **Some filenames break the embed.** `build_markdown` drops the filename straight
   into `![[...]]`. Obsidian reads `[` and `]` as link syntax, `|` as an alias, and
   `#` as a heading link, so a note called `Status #2` or `A|B` points at the wrong
-  file or fails to embed.
+  file or fails to embed. Obsidian's wiki-link syntax has no escape for these
+  characters, so the fix belongs on the naming side rather than in the embed: either
+  strip them in `naming.py`, which changes what output files are called, or emit a
+  normal Markdown link, `[name](name.pdf)`, which does support escaping but shows no
+  inline PDF preview. Those are not equivalent — pick one deliberately.
 - **A page that starts with a code fence gets mangled.** `_strip_code_fence` assumes
   an opening fence came from the model, not from your notes. When the page really
   does start with a fenced snippet, it deletes the opening fence and leaves the
-  closing one, so the rest of the page renders as code.
+  closing one, so the rest of the page renders as code. A safer rule is to strip only
+  when the fences pair up, for example when the last line is also a fence and the
+  total fence count is even.
 
 ## Enhancements
 
@@ -120,7 +141,9 @@ Not scheduled unless the item says so.
   side by side, so swapping the default is a measurement rather than a guess.
 - **Load each notebook once** — `note_to_pdf` and `note_to_page_images` each call
   `load_notebook` on the same file, so every note is read and parsed twice. On a
-  cloud-synced folder that doubles the slowest part of a run.
+  cloud-synced folder that doubles the slowest part of a run. The fix is to load the
+  notebook once in `pipeline.run` and pass the object to both, or add one `convert`
+  helper that returns the PDF bytes and the page images together.
 - **Stream pages instead of holding them all** — `note_to_page_images` builds every
   page image before the model sees any of them, and the `list[Image]` protocol
   writes that into the design. An iterator would cut memory on long notebooks and
