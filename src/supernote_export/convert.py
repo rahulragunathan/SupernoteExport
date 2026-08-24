@@ -1,9 +1,9 @@
-"""Convert a ``.note`` into a PDF and per-page images via ``supernotelib``.
+"""Turn a ``.note`` into a PDF and per-page images, using ``supernotelib``.
 
-The PDF is the archival artifact embedded in the Markdown; the per-page images
-are what the VLM transcriber reads. Supernote pages are bitmaps on-device, so
-the default (raster) PDF is a pixel-exact reproduction; ``vectorize=True`` traces
-them into scalable vector paths instead.
+The PDF is the archival file embedded in the Markdown. The page images are what
+the transcriber reads. Supernote pages are bitmaps on the device, so the default
+raster PDF reproduces them pixel for pixel. ``vectorize=True`` traces them into
+scalable paths instead.
 """
 
 from __future__ import annotations
@@ -17,19 +17,17 @@ from supernotelib import converter
 
 ALL_PAGES = -1
 
-# Native Supernote pages render at ~4.9M pixels (1920x2560). Above ~2M pixels the
-# Qwen3-VL vision stack intermittently collapses to an *empty* generation, so page
-# images are downscaled well below that boundary before reaching the model. This is a
-# model-agnostic pre-render cap (any VLM receives an already-safe image), independent
-# of the model's own processor internals.
+# A Supernote page renders at 1920x2560, about 4.9M pixels. Above roughly 2M, the
+# Qwen3-VL vision stack sometimes returns an *empty* generation, so pages are shrunk
+# well below that line before the model sees them. Shrinking here rather than in the
+# transcriber keeps the cap model-agnostic: every model gets an already-safe image.
 #
-# The default (1.5M) is a *hard-coded conservative constant*, not derived from model
-# metadata — and deliberately so: the cliff is an undocumented quirk whose safe point
-# sits BELOW everything the model advertises. Measured on a failing page: reliable
-# ≤1.77M px, empty ≥2.0M px (the model's config declares 16.7M, and its
-# num_position_embeddings math implies ~2.36M — both produce empty output). See
-# ROADMAP.md. Do not raise the default near 2M; other models are tuned via
-# ``--max-pixels``.
+# 1.5M is a hard-coded conservative number, not read from model metadata, and that is
+# deliberate. The cliff is undocumented and sits below every capacity the model
+# advertises. Measured on a failing page: reliable at or below 1.77M, empty at or
+# above 2.0M. The model's config declares 16.7M, and its num_position_embeddings math
+# implies about 2.36M; both return empty output. See ROADMAP.md. Do not raise this
+# near 2M — tune other models with ``--max-pixels``.
 DEFAULT_MAX_PIXELS = 1_500_000
 
 
@@ -38,18 +36,18 @@ def _load(note_path: Path | str) -> sn.Notebook:
 
 
 def _downscale_to_max_pixels(image: Image.Image, max_pixels: int) -> Image.Image:
-    """Shrink ``image`` (preserving aspect ratio) so it holds at most ``max_pixels``."""
+    """Shrink ``image`` to at most ``max_pixels``, keeping its aspect ratio."""
     pixels = image.width * image.height
     if max_pixels <= 0 or pixels <= max_pixels:
         return image
     factor = math.sqrt(max_pixels / pixels)
-    # Floor (not round) so the result is guaranteed to stay within the cap.
+    # Floor, not round, so the result always stays inside the cap.
     new_size = (max(1, int(image.width * factor)), max(1, int(image.height * factor)))
     return image.resize(new_size, Image.LANCZOS)
 
 
 def note_to_pdf(note_path: Path | str, vectorize: bool = False) -> bytes:
-    """Render the whole note to a single PDF (raster by default)."""
+    """Render the whole note to a single PDF, raster by default."""
     notebook = _load(note_path)
     return converter.PdfConverter(notebook).convert(ALL_PAGES, vectorize=vectorize)
 
@@ -59,9 +57,9 @@ def note_to_page_images(
 ) -> list[Image.Image]:
     """Render each page to a PIL image for the transcriber.
 
-    Pages are downscaled to at most ``max_pixels`` — essential for reliable VLM
-    transcription (see ``DEFAULT_MAX_PIXELS``). The archival PDF is unaffected;
-    it is rendered separately from the full-resolution note.
+    Pages are shrunk to at most ``max_pixels``, which the model needs to transcribe
+    reliably — see ``DEFAULT_MAX_PIXELS``. This does not touch the archival PDF,
+    which is rendered separately from the full-resolution note.
     """
     notebook = _load(note_path)
     image_converter = converter.ImageConverter(notebook)

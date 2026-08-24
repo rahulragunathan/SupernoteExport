@@ -1,14 +1,13 @@
-"""Integration test for the pipeline: real .note conversion + a fake transcriber.
+"""Integration tests for the pipeline: a real ``.note``, a fake transcriber.
 
-Converts a committed sample note (``tests/fixtures/``) through real ``supernotelib``
-while faking only the ``Transcriber`` — so the conversion boundary is genuinely
-exercised without needing a multi-gigabyte model. The fixture ships in the repo, so
-the suite runs anywhere with no setup.
+These convert a committed sample note (``tests/fixtures/``) through real
+``supernotelib``, faking only the ``Transcriber``. So the conversion boundary is
+exercised without a multi-gigabyte model, and the suite runs anywhere with no setup.
 
-The fixture keeps its on-device timestamp name (``20260717_012708.note``) on purpose:
-that exercises ``naming.py``'s ``YYYYMMDD_HHMMSS`` → ``YYYY-MM-DD`` conversion. The
-assertions below encode the fixture's own properties — its ``2026-07-17`` output stem
-and its 3-page count — so they are stable facts about a file the repo owns.
+The fixture keeps its on-device timestamp name (``20260717_012708.note``) on
+purpose: it also exercises ``naming.py``'s ``YYYYMMDD_HHMMSS`` to ``YYYY-MM-DD``
+conversion. The assertions below use the fixture's own properties, a ``2026-07-17``
+output stem and three pages, so they are stable facts about a file the repo owns.
 """
 
 from __future__ import annotations
