@@ -121,7 +121,8 @@ Not scheduled unless the item says so.
 - **Check options at the library seam** — `page_markers`, `pdf_mode`, and
   `max_pixels` are checked only by argparse. Call `run()` or `MlxVlmTranscriber()`
   directly with a bad value and it quietly falls back to the default. Decide as well
-  whether `--max-pixels 0` should stay an undocumented way to switch the cap off.
+  whether a non-positive `--max-pixels` should stay an undocumented way to switch
+  the cap off. `convert.py` treats any value at or below zero that way, not just 0.
 - **Make discovery stricter** — skip directories named `*.note`, which `rglob`
   returns and which then fail per note. Decide whether `.NOTE` should match.
 - **Fill the test gaps** — per-note failure recovery, `cli.main` exit codes and

@@ -2,11 +2,11 @@
 
 Supernote names a file by capture time (``YYYYMMDD_HHMMSS``). A note you rename
 on the device keeps whatever stem you gave it. A timestamp stem becomes a
-``YYYY-MM-DD`` date; any other stem is kept as it is. When two notes want the
-same name in one output folder, the later one gets a ``-2``/``-3`` suffix.
+``YYYY-MM-DD`` date; any other stem is kept as it is.
 
 A name you chose on the device outranks a generated one, so those stems are
-reserved before any date-derived name is handed out.
+reserved before any date-derived name is handed out. Whatever is still competing
+for one name gets a ``-2``/``-3`` suffix, in the order the notes are read.
 """
 
 from __future__ import annotations

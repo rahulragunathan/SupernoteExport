@@ -55,7 +55,8 @@ state. Reasoning and decisions live here.
   `cli.py` before anything imports `huggingface_hub`. Never at module scope.
   `tests/test_transcribe.py` guards this with a subprocess import probe.
 - **MLX is imported inside `MlxVlmTranscriber` methods**, so `--no-transcribe` and
-  the whole test suite run without loading a multi-gigabyte model.
+  the default test suite run without loading a multi-gigabyte model. `pytest -m vlm`
+  is the one exception, and it loads the real model on purpose.
 - **Naming is worked out, never looked up.** It must stay reproducible across runs
   so `--overwrite` and skip-on-rerun stay stable, so sort notes before naming and
   never probe the disk. Names come from a **two-pass reserved set**, not a count of
@@ -81,7 +82,8 @@ state. Reasoning and decisions live here.
 
 ## Environment
 
-- Python **3.13**. Not 3.14 — the dependencies have no wheels for it.
+- Develop on Python **3.13**. Not 3.14 — the dependencies have no wheels for it.
+  The package itself supports 3.10 to 3.13.
 - `uv venv --python 3.13 .venv`, then `uv pip install -e .[dev,transcribe]`. uv
   brings its own 3.13 build, so this works whether or not Homebrew's `python@3.13`
   is installed; Homebrew's `python3` may be 3.14, which this project cannot use.
@@ -121,7 +123,7 @@ state. Reasoning and decisions live here.
 - The model layer has no unit test, by design. An **opt-in eval** covers it
   (`tests/test_vlm_eval.py`, marked `vlm`, deselected by default through `addopts`
   in `pyproject.toml`). Run it with `pytest -m vlm`. It loads the real model, so it
-  *skips* when the model is not cached — the mirror of the fixture test's fail-loud
+  *skips* when the model config is not cached — the mirror of the fixture test's fail-loud
   behavior, because the model is huge and optional while the fixture is cheap and
   always there. Its assertions are tolerant: output is not empty, plus a few printed
   anchors. That guards the empty-output resolution cliff without pinning exact model

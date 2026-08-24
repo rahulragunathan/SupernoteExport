@@ -53,7 +53,8 @@ still exercises the real `supernotelib` path without loading a multi-gigabyte
 model. It is also the seam for swapping in a different model or backend.
 
 **MLX is imported inside `MlxVlmTranscriber` methods**, not at module scope. So
-`--no-transcribe` runs and the whole test suite never load MLX. That is also what
+`--no-transcribe` runs and the default test suite never load MLX; `pytest -m vlm`
+is the one exception, and it loads the real model on purpose. That is also what
 lets `mlx-vlm` be the optional `[transcribe]` extra instead of a hard dependency,
 which keeps the base install working on any platform.
 
@@ -132,7 +133,8 @@ marked `vlm`, deselected by default). It runs the real model on the fixture thro
 the whole pipeline and asserts tolerant properties — output is not empty, and a few
 clearly printed anchors appear — rather than an exact transcription. It guards the
 resolution cliff described above, whose signature is a silently empty, embed-only
-`.md`. It skips when the model is not cached.
+`.md`. It skips when the model config is not in the cache. That gate is not airtight —
+a partly cached model can still start a download, which ROADMAP tracks.
 
 Beyond the eval, the model is checked by running it and reading the result.
 

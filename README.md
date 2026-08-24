@@ -100,9 +100,10 @@ supernote-export --input note.note --output ./out
 | `--overwrite` | off | Convert a note again even when its outputs exist. By default a note is skipped when both its `.md` and `.pdf` are there, so reruns are cheap. |
 
 **Output naming.** A timestamp stem such as `20250817_132236.note` becomes
-`2025-08-17`. A note you renamed on the device keeps that name. When two notes want
-the same name, the later one gets `-2`, then `-3`. The name you chose on the device
-is reserved first, so a generated suffix never takes it.
+`2025-08-17`. A note you renamed on the device always keeps that
+name, because those names are reserved before any date-derived name is handed out.
+Whatever is still competing for one name gets `-2`, then `-3`, in the order the
+notes are read.
 
 **Progress.** Each note prints a line to stderr as it is processed
 (`[3/12] Converting …`), followed by a summary at the end.
@@ -137,4 +138,6 @@ deselected by default). It transcribes the fixture and checks that the output is
 empty and carries a few clearly printed anchors. Those checks are deliberately
 tolerant: they guard the image-resolution cliff described in
 [ARCHITECTURE.md](ARCHITECTURE.md) without pinning an exact transcription. The eval
-skips itself when the model is not cached.
+skips itself when the model config is not
+cached. That gate is not airtight: a partly cached model can still start a
+download, which ROADMAP tracks.
