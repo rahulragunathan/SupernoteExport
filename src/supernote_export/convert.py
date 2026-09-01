@@ -26,8 +26,8 @@ ALL_PAGES = -1
 # deliberate. The cliff is undocumented and sits below every capacity the model
 # advertises. Measured on a failing page: reliable at or below 1.77M, empty at or
 # above 2.0M. The model's config declares 16.7M, and its num_position_embeddings math
-# implies about 2.36M; both return empty output. See ROADMAP.md. Do not raise this
-# near 2M — tune other models with ``--max-pixels``.
+# implies about 2.36M; both return empty output. See docs/OPEN_QUESTIONS.md (UNK-02).
+# Do not raise this near 2M — tune other models with ``--max-pixels``.
 DEFAULT_MAX_PIXELS = 1_500_000
 
 

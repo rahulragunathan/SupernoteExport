@@ -9,7 +9,7 @@ Everything runs on your Mac. There is no server, no queue, and no database. The
 only network call is the first transcription run, which downloads the model
 weights into the Hugging Face cache. After that, conversion works offline.
 
-![SupernoteExport architecture](docs/architecture/supernote-export-architecture.png)
+![SupernoteExport architecture](architecture/supernote-export-architecture.png)
 
 ## The shape of the system
 
@@ -71,7 +71,7 @@ depends only on input order, so a rerun produces the same names. That is what ke
 skip-on-rerun and `--overwrite` stable.
 
 Names hold **within** a run. Two runs that see different notes still hand out
-different names — see the ROADMAP, which tracks that as an open design question.
+different names, which is [KI-01](KNOWN_ISSUES.md#ki-01).
 
 **One bad note cannot stop a batch.** `pipeline.run()` wraps each note in
 `try/except`, records the failure in `Summary.failed`, and carries on. The CLI
@@ -110,7 +110,7 @@ for good.
 into place. So a file that exists is one that was written in full, which is what
 makes "it exists" a sound stand-in for "it was converted". Two limits: this is not
 a durability guarantee, since there is no `fsync`, and the two renames are not one
-transaction. The ROADMAP records both.
+transaction. [UNK-04](OPEN_QUESTIONS.md#unk-04) records both as accepted risks.
 
 ## Testing strategy
 
@@ -134,7 +134,8 @@ the whole pipeline and asserts tolerant properties — output is not empty, and 
 clearly printed anchors appear — rather than an exact transcription. It guards the
 resolution cliff described above, whose signature is a silently empty, embed-only
 `.md`. It skips when the model config is not in the cache. That gate is not airtight —
-a partly cached model can still start a download, which ROADMAP tracks.
+a partly cached model can still start a download, which is
+[ENH-04](ENHANCEMENTS.md#enh-04).
 
 Beyond the eval, the model is checked by running it and reading the result.
 
