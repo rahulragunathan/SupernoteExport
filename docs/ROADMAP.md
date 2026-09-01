@@ -20,18 +20,21 @@ completion is deleted from both, with the record written into CHANGELOG `[Unrele
 item dropped rather than built moves to "Decisions taken and not taken". IDs are never
 reused. Nothing here looks backward — completed phases are CHANGELOG releases.
 
-**Last Updated**: 2026-09-01 (restructured into the pointer index plus three supporting files)
+**Last Updated**: 2026-09-01 (repo-wide external review; six issues and one question added)
 
 ## Status
 
-The tool is in daily use. The open queue is weighted toward silent-failure paths — output
-that looks complete and is not — and none of it has been seen in a real run. Nothing is
-scheduled.
+The tool is in daily use. The open queue has one shape: an output file's presence is treated
+as proof of what it contains, and almost every serious issue below follows from that — a note
+skipped because a file exists, a transcription replaced by an empty one, an edit never picked
+up. A repo-wide external review on 2026-09-01 reproduced several of them by running them, so
+the queue is no longer entirely theoretical. Nothing is scheduled.
 
 ### Phases
 
-No phase is in flight. The next one is a full external code review of the codebase; its
-findings will be filed here.
+No phase is in flight, and none is planned. The queue's shape points at one piece of work:
+recording how each output was produced would settle KI-01, KI-02, KI-12, KI-13 and KI-15
+together.
 
 ## Known Issues
 
@@ -41,14 +44,20 @@ Most severe first. Severity definitions and full detail in [KNOWN_ISSUES.md](KNO
 |----|-------|----------|
 | [KI-01](KNOWN_ISSUES.md#ki-01) | Output names shift between runs, so a note is skipped or written twice | Critical |
 | [KI-02](KNOWN_ISSUES.md#ki-02) | A stray PDF with no matching `.md` is overwritten without `--overwrite` | Critical |
+| [KI-12](KNOWN_ISSUES.md#ki-12) | `--no-transcribe --overwrite` destroys existing transcriptions | Critical |
 | [KI-03](KNOWN_ISSUES.md#ki-03) | A dropped page is indistinguishable from a blank page | High |
 | [KI-04](KNOWN_ISSUES.md#ki-04) | A page that hits the token cap is written out as finished | High |
+| [KI-13](KNOWN_ISSUES.md#ki-13) | An embed-only `.md` counts as converted, so a later transcribing run skips it | High |
 | [KI-05](KNOWN_ISSUES.md#ki-05) | Installing on Python 3.14 fails halfway instead of being refused | Medium |
 | [KI-06](KNOWN_ISSUES.md#ki-06) | A half-loaded model poisons every later note in the batch | Medium |
 | [KI-07](KNOWN_ISSUES.md#ki-07) | `[`, `]`, `\|` and `#` in a name break the Obsidian embed | Medium |
 | [KI-08](KNOWN_ISSUES.md#ki-08) | A page that really starts with a code fence is mangled | Medium |
 | [KI-09](KNOWN_ISSUES.md#ki-09) | A missing `[transcribe]` extra fails once per note, after each PDF render | Medium |
 | [KI-10](KNOWN_ISSUES.md#ki-10) | A bad `--input` prints a traceback | Medium |
+| [KI-14](KNOWN_ISSUES.md#ki-14) | Outputs are written mode 0600, ignoring the user's umask | Medium |
+| [KI-15](KNOWN_ISSUES.md#ki-15) | A note edited after conversion is never reconverted | Medium |
+| [KI-16](KNOWN_ISSUES.md#ki-16) | A failing progress callback is recorded as a conversion failure | Medium |
+| [KI-17](KNOWN_ISSUES.md#ki-17) | The writer's atomicity test asserts the opposite of its name | Medium |
 | [KI-11](KNOWN_ISSUES.md#ki-11) | Indentation on a page's first line is stripped | Low |
 
 ## Enhancements
@@ -80,3 +89,4 @@ reasoning behind each in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md).
 | [UNK-03](OPEN_QUESTIONS.md#unk-03) | How stable is the `mlx-vlm` API we call? | Risk |
 | [UNK-04](OPEN_QUESTIONS.md#unk-04) | The `.pdf` and `.md` land as two operations, with no `fsync` | Risk |
 | [UNK-05](OPEN_QUESTIONS.md#unk-05) | Do users know where their weights actually landed? | Risk |
+| [UNK-06](OPEN_QUESTIONS.md#unk-06) | Can two concurrent runs publish a cross-run PDF and Markdown pair? | Risk |

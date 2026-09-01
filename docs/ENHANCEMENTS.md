@@ -31,6 +31,7 @@ Priority is about value, not urgency. Effort is a rough estimate — a session, 
 **Priority:** Medium · **Effort:** ~2 hours
 **Where:** [convert.py:34-70](../src/supernote_export/convert.py#L34-L70), [pipeline.py:72-77](../src/supernote_export/pipeline.py#L72-L77) · **Regression net:** `tests/test_convert.py`, `tests/test_pipeline.py`
 **Source:** gpt-5.6-sol — full-codebase review
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
 
 ### What it is
 
@@ -57,6 +58,13 @@ parse and the second disk read. Nobody has reported a run being slow because of 
 why this is Medium and not High — it removes a duplication rather than closing a gap hit in
 real use. Measure before assuming the saving is large.
 
+There is a second, better reason than speed. The two loads are separate reads of a file that a
+sync client may be rewriting, so the archival PDF can come from one revision of the note and
+the transcription from another, with nothing to show it happened. The window is about a second
+and needs a sync landing inside it, so this is a sharp edge rather than an observed failure —
+but loading once closes it, which speed alone does not justify. Related:
+[KI-15](KNOWN_ISSUES.md#ki-15) is the same class of staleness at a coarser grain.
+
 ### Notes for the work
 
 Changing `note_to_pdf` and `note_to_page_images` to accept a `Notebook` instead of a path
@@ -77,6 +85,7 @@ fixture, and `tests/test_pipeline.py` asserts the transcriber sees the fixture's
 **Priority:** Medium · **Effort:** ~3 hours
 **Where:** [pipeline.py:30-50](../src/supernote_export/pipeline.py#L30-L50), [convert.py:38-46](../src/supernote_export/convert.py#L38-L46), [transcribe.py:85-93](../src/supernote_export/transcribe.py#L85-L93) · **Regression net:** `tests/test_pipeline.py`, `tests/test_convert.py`
 **Source:** gpt-5.6-sol — full-codebase review
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
 
 ### What it is
 
@@ -120,6 +129,7 @@ it is, or restrict it to `0` and reject negatives.
 **Priority:** Medium · **Effort:** ~half a day
 **Where:** [pipeline.py:82-84](../src/supernote_export/pipeline.py#L82-L84), [cli.py:80-109](../src/supernote_export/cli.py#L80-L109), [convert.py:49-52](../src/supernote_export/convert.py#L49-L52) · **Regression net:** `tests/test_pipeline.py`, `tests/test_cli.py`, `tests/test_convert.py`
 **Source:** internal `/code-review high` — repo review, 2026-08-10
+**Reconfirmed:** gemini-3.1-pro-high — repo review, 2026-09-01
 
 ### What it is
 
@@ -225,6 +235,7 @@ every note, and the embed-only `--no-transcribe` output should stay minimal.
 **Priority:** Medium · **Effort:** ~3 hours
 **Where:** [convert.py:55-70](../src/supernote_export/convert.py#L55-L70), [transcribe.py:75-79](../src/supernote_export/transcribe.py#L75-L79) · **Regression net:** `tests/test_convert.py`, `tests/test_pipeline.py`
 **Source:** gpt-5.6-sol — full-codebase review
+**Reconfirmed:** gemini-3.1-pro-high — repo review, 2026-09-01
 
 ### What it is
 
@@ -264,6 +275,7 @@ Pairs with [ENH-01](#enh-01): one notebook load feeding one lazy page iterator.
 **Priority:** Medium · **Effort:** ~1 hour
 **Where:** [discover.py:24-26](../src/supernote_export/discover.py#L24-L26) · **Regression net:** `tests/test_discover.py`
 **Source:** gpt-5.6-sol — full-codebase review
+**Reconfirmed:** gemini-3.1-pro-high — repo review, 2026-09-01
 
 ### What it is
 
@@ -339,7 +351,8 @@ The package declares itself macOS-only:
 classifiers = [
     "Environment :: Console",
     "Operating System :: MacOS",
-    ...
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: Markdown",
 ]
 ```
 
@@ -367,6 +380,7 @@ Related: [KI-05](KNOWN_ISSUES.md#ki-05) is the other packaging-metadata item; bo
 **Priority:** Low · **Effort:** ~1 hour
 **Where:** `tests/test_pipeline.py`, `tests/test_convert.py`, `tests/test_vlm_eval.py`
 **Source:** internal `/code-review high` — repo review, 2026-08-10
+**Reconfirmed:** gemini-3.1-pro-high — repo review, 2026-09-01
 
 ### What it is
 

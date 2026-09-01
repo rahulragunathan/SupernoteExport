@@ -13,7 +13,7 @@ or into "Decisions taken and not taken" in [CLAUDE.md](../CLAUDE.md) if the answ
 nothing.
 
 **IDs are assigned in ascending order and never reused**, including after an entry is
-deleted. The next free ID is **UNK-06**.
+deleted. The next free ID is **UNK-07**.
 
 Entries are ordered Decision, then Verification, then Risk, with ties broken by ascending ID.
 There is no open Decision today.
@@ -177,3 +177,33 @@ check. `hf cache scan` lists what is where, and `hf cache delete` reclaims dupli
 **What settles it:** nothing, unless the download becomes a common complaint. If it does, the
 answer is a one-line note in the CLI's first-run output naming the resolved cache path, not a
 tool-set variable.
+
+---
+
+<a id="unk-06"></a>
+## UNK-06 — Can two concurrent runs publish a cross-run PDF and Markdown pair?
+
+**Kind:** Risk
+**Where:** [writer.py:40-70](../src/supernote_export/writer.py#L40-L70)
+**Source:** gpt-5.6-sol — repo review, 2026-09-01
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
+
+Staging under unique temporary names solves one concurrency problem: two runs over the same
+output folder cannot write to, or clean up, each other's scratch file. The comment in `_stage`
+says exactly that, and it is true.
+
+It does not make the *pair* atomic. Two runs converting the same note interleave four renames
+over two final paths, and nothing orders them. One run's PDF can end up beside the other run's
+Markdown. If both runs saw the same source note the two are identical and the interleaving is
+harmless; if one run used `--max-pixels` or a different `--model`, they are not.
+
+There is no lock, no generation marker, and no test covering two processes.
+
+Accepted for now because the tool is run by hand, one invocation at a time, and the documented
+use is a person converting a folder. The risk arrives with a scheduled run, a watch mode, or
+anyone running two windows at once.
+
+**What settles it:** a decision that concurrent runs are supported, which means a per-output
+lock or a generation id and a test that actually runs two processes; or a decision that they
+are not, which means saying so in the README and failing fast on a detectable second run. The
+manifest in [UNK-04](#unk-04) would carry the generation id if that direction is taken.

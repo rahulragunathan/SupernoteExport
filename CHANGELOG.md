@@ -18,6 +18,22 @@ this file existed.
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-09-01 — Repo-wide external review
+
+### Added
+
+- Six known issues and one open question, from a repo-wide review by gpt-5.6-sol,
+  gemini-3.1-pro-high and an internal `/code-review high`. Five of the six were reproduced by
+  running them rather than by reading the code: `--no-transcribe --overwrite` destroying
+  existing transcriptions, an embed-only `.md` counting as converted, outputs written mode
+  0600, a progress-callback error recorded as a conversion failure, and a writer test that
+  asserts the opposite of its name.
+
+### Fixed
+
+- `__version__` in `supernote_export/__init__.py` still read `0.1.0`. Version 0.7.2 bumped
+  `pyproject.toml` alone, leaving the two disagreeing.
+
 ## [0.7.2] - 2026-09-01 — Documentation restructure
 
 ### Added
@@ -241,7 +257,8 @@ was filed rather than hot-fixed, because none had appeared in a real run.
 
 ## Reference
 
-[Unreleased]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.2...main
+[Unreleased]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.3...main
+[0.7.3]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/rahulragunathan/SupernoteExport/compare/4372a6a...v0.7.2
 [0.7.1]: https://github.com/rahulragunathan/SupernoteExport/compare/9572966...4372a6a
 [0.7.0]: https://github.com/rahulragunathan/SupernoteExport/compare/f7946e3...9572966

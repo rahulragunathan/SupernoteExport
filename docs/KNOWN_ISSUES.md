@@ -8,12 +8,14 @@ CHANGELOG entry that closes it. When fixed, delete it from here and from the ROA
 the record lives in [CHANGELOG.md](../CHANGELOG.md).
 
 **IDs are assigned in ascending order and never reused**, including after an entry is
-deleted. The next free ID is **KI-12**.
+deleted. The next free ID is **KI-18**.
 
 Entries are ordered by severity, then by ascending ID.
 
 None of these has been seen in a real run. They came out of code review, and each one has
-been re-checked against the code as it stands today.
+been re-checked against the code as it stands today. The 2026-09-01 pass reproduced
+[KI-12](#ki-12), [KI-13](#ki-13), [KI-14](#ki-14), [KI-16](#ki-16) and [KI-17](#ki-17) by
+running them, rather than by reading the code alone.
 
 ## Severity
 
@@ -32,6 +34,7 @@ been re-checked against the code as it stands today.
 **Severity:** Critical
 **Where:** [pipeline.py:52-59](../src/supernote_export/pipeline.py#L52-L59), [naming.py:29-63](../src/supernote_export/naming.py#L29-L63)
 **Source:** internal `/code-review high`, gpt-5.6-sol, gemini-3.1-pro-high — repo review, 2026-08-10
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
 
 ### What happens
 
@@ -147,12 +150,73 @@ Related: [KI-01](#ki-01).
 
 ---
 
+<a id="ki-12"></a>
+## KI-12 — `--no-transcribe --overwrite` destroys existing transcriptions
+
+**Severity:** Critical
+**Where:** [pipeline.py:74-80](../src/supernote_export/pipeline.py#L74-L80), [writer.py:10-20](../src/supernote_export/writer.py#L10-L20)
+**Source:** internal /code-review high — repo review, 2026-09-01
+
+### What happens
+
+`transcription` starts empty and is filled only when a transcriber was supplied:
+
+```python
+transcription = ""
+if transcriber is not None:
+    images = convert.note_to_page_images(note_path, max_pixels=max_pixels)
+    transcription = transcriber.transcribe_pages(images)
+
+markdown = build_markdown(transcription, f"{name}.pdf")
+write_note_outputs(out_dir, name, pdf_bytes, markdown)
+```
+
+With `--no-transcribe` there is no transcriber, so `build_markdown` returns the embed alone.
+`write_note_outputs` then renames that over whatever `<name>.md` held before. Add
+`--overwrite` and the skip check never runs, so the run rewrites every note it finds.
+
+The transcription exists nowhere else. The PDF holds the handwriting as an image, not as text,
+so nothing can reconstruct it short of transcribing the note again.
+
+### Example scenario
+
+You transcribed a folder of 40 meeting notes last month. Today you add a few notes and want
+the PDFs refreshed quickly, so you run with `--no-transcribe --overwrite` to skip the slow
+model pass. Every one of the 40 `.md` files is replaced with a single line, `![[<name>.pdf]]`.
+The run prints "40 converted" and exits zero.
+
+Reproduced: a run with a transcriber produces `# Meeting notes\n\nReal transcription…`; a
+second run with `transcriber=None, overwrite=True` leaves `![[2026-07-17.pdf]]`.
+
+### Notes for a fix
+
+The root cause is that `--no-transcribe` is treated as "produce a Markdown file with no
+transcription" rather than "do not touch the transcription". Options, in increasing cost:
+
+- **Refuse the combination.** `cli.main` rejects `--no-transcribe --overwrite` together and
+  says why. Cheapest, and it forbids a case someone may legitimately want.
+- **Never shrink a `.md`.** When not transcribing, and an existing `.md` already has a body
+  above the embed, keep that body and rewrite only the embed line. Preserves the useful case;
+  needs `build_markdown` to read the existing file, which it currently does not.
+- **Record how each `.md` was produced** and refuse to replace a transcribed file with an
+  untranscribed one. This is the manifest idea from [UNK-04](OPEN_QUESTIONS.md#unk-04) and
+  would also settle [KI-13](#ki-13) and [KI-15](#ki-15).
+
+Constraint: `build_markdown` is a pure function with unit tests in `tests/test_writer.py`, and
+keeping it pure is worth something. If it must consider existing content, pass that content in
+rather than letting it read the disk.
+
+Related: [KI-13](#ki-13) is the same confusion in the other direction.
+
+---
+
 <a id="ki-03"></a>
 ## KI-03 — A dropped page is indistinguishable from a blank page
 
 **Severity:** High
 **Where:** [transcribe.py:51-59](../src/supernote_export/transcribe.py#L51-L59)
 **Source:** internal `/code-review high`, gpt-5.6-sol, gemini-3.1-pro-high — repo review, 2026-08-10
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
 
 ### What happens
 
@@ -216,6 +280,7 @@ numbers used up — must survive, because the headings line up with the PDF.
 **Severity:** High
 **Where:** [transcribe.py:106-120](../src/supernote_export/transcribe.py#L106-L120)
 **Source:** internal `/code-review high`, gpt-5.6-sol, gemini-3.1-pro-high — repo review, 2026-08-10
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
 
 ### What happens
 
@@ -268,12 +333,67 @@ handles.
 
 ---
 
+<a id="ki-13"></a>
+## KI-13 — An embed-only `.md` counts as converted, so a later transcribing run skips it
+
+**Severity:** High
+**Where:** [pipeline.py:61-67](../src/supernote_export/pipeline.py#L61-L67)
+**Source:** internal /code-review high — repo review, 2026-09-01
+
+### What happens
+
+The skip check asks only whether both files exist:
+
+```python
+# Both files must be there. A surviving .md whose .pdf is gone would
+# otherwise be skipped forever behind a broken embed.
+if not overwrite and md_path.exists() and pdf_path.exists():
+    if on_progress is not None:
+        on_progress(index, total, note_path, "skip")
+    summary.skipped.append(md_path)
+    continue
+```
+
+A `--no-transcribe` run writes both files, so the pair looks complete. The `.md` holds only
+the embed. A later run *with* a model sees both files present and skips the note. The
+transcription never happens, and the run reports success.
+
+### Example scenario
+
+You convert a folder with `--no-transcribe` because you want the PDFs into your vault
+straight away and the model pass is slow. Later you run the tool properly, without the flag,
+to fill in the transcriptions. It prints "Skipping" for every note and reports
+"0 converted, 40 skipped, 0 failed", exit code 0. Nothing was transcribed and nothing said so.
+
+The workaround is `--overwrite` — which then triggers [KI-12](#ki-12) if any note in the
+folder *was* already transcribed.
+
+Reproduced: pass one with `transcriber=None` gives `converted=1`; pass two with a real
+transcriber gives `converted=0 skipped=1`, and the `.md` is still embed-only.
+
+### Notes for a fix
+
+Presence is the wrong signal. The skip check needs to know *what* the existing `.md` contains,
+not merely that it exists. The cheapest honest version: when a transcriber is supplied, do not
+skip a `.md` whose body is only the embed — that file demonstrably has no transcription, and
+`build_markdown`'s output format makes it a one-line check.
+
+A general fix records how each output was produced, which is the manifest in
+[UNK-04](OPEN_QUESTIONS.md#unk-04) and also settles [KI-12](#ki-12) and [KI-15](#ki-15).
+
+Constraint: whatever is added must keep the property that a file which exists was written in
+full ([UNK-04](OPEN_QUESTIONS.md#unk-04)), and must not make the common case — everything
+already converted — read every `.md` on disk when nothing has changed.
+
+---
+
 <a id="ki-05"></a>
 ## KI-05 — Installing on Python 3.14 fails halfway instead of being refused
 
 **Severity:** Medium
 **Where:** [pyproject.toml:10](../pyproject.toml#L10)
 **Source:** gpt-5.6-sol — full-codebase review
+**Reconfirmed:** gpt-5.6-sol — repo review, 2026-09-01
 
 ### What happens
 
@@ -408,6 +528,7 @@ be planned together.
 **Severity:** Medium
 **Where:** [transcribe.py:64-72](../src/supernote_export/transcribe.py#L64-L72)
 **Source:** internal `/code-review high`, gpt-5.6-sol, gemini-3.1-pro-high — repo review, 2026-08-10
+**Reconfirmed:** gemini-3.1-pro-high — repo review, 2026-09-01
 
 ### What happens
 
@@ -434,6 +555,11 @@ You sketch a shell command at the top of a page, fence it, and write notes under
 transcription comes back as the fenced block plus your prose. `_strip_code_fence` deletes the
 opening ``` and leaves the closing one, so Obsidian reads everything *after* the closer as
 the start of a new code block. The rest of the page renders as code.
+
+A second trigger reaches the same broken state from the other direction. The model wraps its
+whole answer in a fence *and* adds a closing remark — "Here is the transcription." — after it.
+The closing fence is then no longer the last line, so the same test fails to remove it, and
+the opener is stripped regardless.
 
 ### Notes for a fix
 
@@ -505,6 +631,7 @@ supplies its own `Transcriber` must not be forced to have MLX installed.
 **Severity:** Medium
 **Where:** [cli.py:89-109](../src/supernote_export/cli.py#L89-L109), [discover.py:19-28](../src/supernote_export/discover.py#L19-L28)
 **Source:** internal `/code-review high`, gpt-5.6-sol, gemini-3.1-pro-high — repo review, 2026-08-10
+**Reconfirmed:** gemini-3.1-pro-high — repo review, 2026-09-01
 
 ### What happens
 
@@ -540,6 +667,203 @@ would also swallow bugs that should surface.
 
 `tests/test_cli.py` covers the parser and the progress printer; the exit-code path has no
 test today, which is part of [ENH-03](ENHANCEMENTS.md#enh-03).
+
+---
+
+<a id="ki-14"></a>
+## KI-14 — Outputs are written mode 0600, ignoring the user's umask
+
+**Severity:** Medium
+**Where:** [writer.py:23-37](../src/supernote_export/writer.py#L23-L37)
+**Source:** gpt-5.6-sol, gemini-3.1-pro-high, internal /code-review high — repo review, 2026-09-01
+
+### What happens
+
+Staging goes through `tempfile.mkstemp`, which creates the file mode 0600 by design — it is a
+security primitive. `os.replace` preserves the source file's mode, so the published output
+keeps 0600 rather than the mode a normal write would produce.
+
+```python
+fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+tmp = Path(tmp_name)
+try:
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(data)
+```
+
+Measured with umask 022: every `.md` and `.pdf` lands `-rw-------`, where a plain write in the
+same directory gives `-rw-r--r--`.
+
+### Example scenario
+
+A vault on a shared machine, or one served by a daemon that runs as a different user, gets
+files nobody but the owner can read. The tool reports success; the failure shows up later, in
+the other program.
+
+For a single-user Mac where Obsidian and the sync client both run as you, nothing breaks —
+which is why this has not been noticed, and why it is Medium rather than High.
+
+### Notes for a fix
+
+Two ways, and the second is the one to prefer:
+
+- `os.chmod(tmp, 0o666 & ~current_umask)` before the rename. Reading the umask requires setting
+  it and restoring it, which is not thread-safe.
+- Create the temp file with `os.open(..., O_CREAT | O_EXCL | O_WRONLY, 0o666)` and a unique name
+  built from `uuid4()`, so the mode goes through the umask the way an ordinary write does.
+  Keeps the uniqueness that stops two runs colliding.
+
+Constraint: the name must stay unique per run — that is what stops two runs over one output
+folder cleaning up each other's staging file — and the staged file must still be removed if
+the write fails.
+
+**Rating note:** both external reviewers rated this High. Filed at Medium because the scale's
+High is for a silently wrong *result*, and the file content is correct; the consequence needs a
+second user or process to appear, and `chmod` works around it. Worth overruling if the vault is
+ever shared.
+
+---
+
+<a id="ki-15"></a>
+## KI-15 — A note edited after conversion is never reconverted
+
+**Severity:** Medium
+**Where:** [pipeline.py:61-67](../src/supernote_export/pipeline.py#L61-L67)
+**Source:** gpt-5.6-sol — repo review, 2026-09-01
+
+### What happens
+
+The skip check compares nothing about the source note — not its modification time, not its
+size, not a hash. Completion is represented purely by two output paths existing. So a note you
+keep writing in goes on producing the output it produced the first time.
+
+### Example scenario
+
+You convert a running project notebook on Monday. Over the week you add six pages to it on the
+device. On Friday you run the tool over the same folder. It prints
+`[1/1] Skipping Project.note (exists)` and exits zero. Your vault still holds Monday's PDF and
+Monday's transcription, and nothing indicates the note has moved on.
+
+`--overwrite` fixes it, at the cost of reconverting and re-transcribing the whole folder —
+and, if any note in that folder is embed-only, of triggering [KI-12](#ki-12).
+
+### Notes for a fix
+
+Comparing the note's modification time against the output's is the obvious move and is nearly
+free, since both stats are already needed. It is not airtight: a cloud-synced file's mtime is
+set by the sync client and can go backwards, so the comparison should treat "source newer than
+output" as the trigger and tolerate clock skew rather than demand equality.
+
+A content hash is exact and costs a full read of every note on every run, which is precisely
+the expensive part on a synced folder — see [ENH-01](ENHANCEMENTS.md#enh-01). Recording the
+hash in a manifest ([UNK-04](OPEN_QUESTIONS.md#unk-04)) gets the accuracy without the reread,
+and settles [KI-12](#ki-12) and [KI-13](#ki-13) at the same time. That is the direction worth
+taking if all four are fixed together.
+
+Filed at Medium rather than High because the run does say "Skipping" for each note, so the
+behavior is visible to an operator who reads the output, and `--overwrite` is a real
+workaround. It is still wrong: "skipped" reads as "already up to date", which is exactly what
+it is not.
+
+---
+
+<a id="ki-16"></a>
+## KI-16 — A failing progress callback is recorded as a conversion failure
+
+**Severity:** Medium
+**Where:** [pipeline.py:60-83](../src/supernote_export/pipeline.py#L60-L83)
+**Source:** internal /code-review high — repo review, 2026-09-01
+
+### What happens
+
+`on_progress` is called inside the same `try` that guards conversion, and the handler catches
+everything:
+
+```python
+if on_progress is not None:
+    on_progress(index, total, note_path, "convert")
+
+pdf_bytes = convert.note_to_pdf(note_path, vectorize=vectorize)
+```
+
+So an exception raised by the *reporting* path is attributed to the note. The callback is
+called before conversion starts, which means a callback that always raises fails every note
+and converts nothing.
+
+The realistic trigger is a closed stderr. `cli._print_progress` prints to stderr, and
+`supernote-export … 2>&1 | head` closes the pipe once `head` has its ten lines. The next print
+raises `BrokenPipeError`.
+
+### Example scenario
+
+You pipe a run through `head` to glance at the first few notes. From note eleven onward every
+note is recorded as failed with `BrokenPipeError(32, 'Broken pipe')`, nothing is converted, and
+the CLI exits 1. The summary blames the notes.
+
+Reproduced with a callback that raises `BrokenPipeError`: `converted=0 skipped=0 failed=1`,
+the failure recorded against the note's own path.
+
+### Notes for a fix
+
+Move the `on_progress` calls outside the `try`, or wrap them in their own narrow handler.
+Reporting is not conversion and its failure should not be recorded as one.
+
+Decide separately what a broken pipe should do: for a CLI, exiting quietly is the conventional
+answer, and `cli.main` is the right place for that rather than the library. `pipeline.run` is
+importable, so it should not swallow a caller's callback error silently either — letting it
+propagate is defensible, as long as it is not filed under `Summary.failed`.
+
+Constraint: "one bad note must not stop a batch" is a named invariant. Narrowing this `except`
+must not narrow that.
+
+---
+
+<a id="ki-17"></a>
+## KI-17 — The writer's atomicity test asserts the opposite of its name
+
+**Severity:** Medium
+**Where:** `tests/test_writer.py`, `test_failure_while_publishing_leaves_the_previous_pair_intact`
+**Source:** gpt-5.6-sol, internal /code-review high — repo review, 2026-09-01
+
+### What happens
+
+The test simulates the `.md` rename failing and then checks the old Markdown survived and that
+exactly two files are present. It never checks the PDF's bytes — and the PDF has already been
+replaced by then, because it is renamed first.
+
+```python
+assert (tmp_path / "2025-08-17.md").read_text(encoding="utf-8") == "first\n"
+assert sorted(p.name for p in tmp_path.iterdir()) == ["2025-08-17.md", "2025-08-17.pdf"]
+```
+
+Measured: after the simulated failure the PDF holds `b'%PDF-1.4 SECOND'`. The pair is not
+intact — it is a new PDF beside an old Markdown, which is exactly the mismatch
+[UNK-04](OPEN_QUESTIONS.md#unk-04) describes. The test's name asserts a property the code does
+not have, and its assertions are weak enough not to notice.
+
+A second, smaller problem in the same test: `monkeypatch.setattr(writer.os, "replace", …)`
+patches the `os` module itself, since `writer.os` *is* `os`. `monkeypatch` undoes it afterwards,
+so nothing leaks, but the patch is process-wide while it is in effect rather than scoped to the
+writer.
+
+### Example scenario
+
+Someone changes `write_note_outputs` to publish the Markdown first. That is a real behavior
+change — it moves which half of the pair survives a partial failure — and this test passes
+either way. The regression net has a hole exactly where it claims to be strongest.
+
+### Notes for a fix
+
+Rename the test for what it checks, and assert the whole state after the failure: which file
+holds which bytes. If the intended guarantee really is "the previous pair survives", then the
+code has to change too, not the test — and that is [UNK-04](OPEN_QUESTIONS.md#unk-04)'s
+question, not a test fix.
+
+For the patching: target the function the writer calls, or inject the rename, so the test
+scopes to the writer rather than to `os`.
+
+Filed as a defect rather than a coverage gap ([ENH-03](ENHANCEMENTS.md#enh-03)) because the
+test exists and is misleading, which is worse than its absence.
 
 ---
 
