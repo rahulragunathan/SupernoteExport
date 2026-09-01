@@ -26,7 +26,7 @@ error is one glance from the original.
 - **Transcription:** [`mlx-vlm`](https://github.com/Blaizzy/mlx-vlm), default model
   `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit`. Change it with `--model`.
 
-[ARCHITECTURE.md](ARCHITECTURE.md) covers the modules, a diagram, and how the two
+[ARCHITECTURE.md](docs/ARCHITECTURE.md) covers the modules, a diagram, and how the two
 independent paths — archival PDF and transcription — fit together.
 
 ## Requirements
@@ -94,7 +94,7 @@ supernote-export --input note.note --output ./out
 | `--output` | *(required)* | Output root. The input subfolder tree is mirrored under it. |
 | `--model` | `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit` | MLX-VLM model used for transcription. |
 | `--pdf-mode` | `raster` | `raster` is pixel-exact, `vector` traces the strokes into scalable paths. |
-| `--max-pixels` | `1500000` | Caps the page images sent to the model. Pages are shrunk to fit first. The default is tuned for reliable transcription — read [ARCHITECTURE.md](ARCHITECTURE.md) before raising it. |
+| `--max-pixels` | `1500000` | Caps the page images sent to the model. Pages are shrunk to fit first. The default is tuned for reliable transcription — read [ARCHITECTURE.md](docs/ARCHITECTURE.md) before raising it. |
 | `--page-markers` | `none` | How pages are separated in the transcription: `none` is a blank line, `line-break` is a `---` rule, and `page-numbers` adds `## Page N` headings that match the PDF's page numbers. |
 | `--no-transcribe` | off | PDF only. The `.md` holds just the embed. Fast, and no model needed. |
 | `--overwrite` | off | Convert a note again even when its outputs exist. By default a note is skipped when both its `.md` and `.pdf` are there, so reruns are cheap. |
@@ -137,7 +137,7 @@ and never load it. The real model is covered by an **opt-in eval** (`pytest -m v
 deselected by default). It transcribes the fixture and checks that the output is not
 empty and carries a few clearly printed anchors. Those checks are deliberately
 tolerant: they guard the image-resolution cliff described in
-[ARCHITECTURE.md](ARCHITECTURE.md) without pinning an exact transcription. The eval
-skips itself when the model config is not
-cached. That gate is not airtight: a partly cached model can still start a
-download, which ROADMAP tracks.
+[ARCHITECTURE.md](docs/ARCHITECTURE.md) without pinning an exact transcription.
+The eval skips itself when the model config is not cached. That gate is not
+airtight: a partly cached model can still start a download, which is
+[ENH-04](docs/ENHANCEMENTS.md#enh-04).

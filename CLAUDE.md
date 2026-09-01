@@ -31,17 +31,45 @@ One job per module, under `src/supernote_export/`:
 Data flow: `.note` → a PDF for the embed, plus page PNGs → model → transcription →
 `.md`. The model never reads the PDF. The two paths are independent.
 
-[ARCHITECTURE.md](ARCHITECTURE.md) has the full write-up and the diagram. That
-diagram is **generated, not drawn by hand**. Edit
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the full write-up and the diagram.
+That diagram is **generated, not drawn by hand**. Edit
 `docs/architecture/build_architecture.py`, re-run it, then run the `drawio` skill's
 `validate.py` and `render_png.py`. Never hand-edit the `.drawio` XML or the PNG.
 
-[ROADMAP.md](ROADMAP.md) uses **fixed sections**: **Status** (milestones, with
-`Done (PR #N)` for anything merged), **Known Issues** (reproducible bugs only),
-**Enhancements** (unscheduled unless the item says otherwise), **Resolved** (closed
-issues and end-of-phase findings, grouped by PR), **Unknowns** (open risks), and
-**Notes** (caveats that are not bugs). Keep README and ARCHITECTURE to current
-state. Reasoning and decisions live here.
+## Where a fact belongs
+
+The only docs at the repo root are `README.md`, `CLAUDE.md`, `CHANGELOG.md` and
+`LICENSE`. Every other doc lives in `docs/`. (Build and packaging files —
+`pyproject.toml`, the `requirements*.txt` pointers, `.gitignore` — stay at the root
+because their tooling requires it.) Docs split by tense, and one fact lives in
+exactly one file:
+
+| Tense | File | Holds |
+|-------|------|-------|
+| Past | [CHANGELOG.md](CHANGELOG.md) | What shipped, by release. A released section is never edited. |
+| Present | [README.md](README.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), this file | What the code is now. |
+| Future | [docs/ROADMAP.md](docs/ROADMAP.md) + its three supporting files | What has not happened yet. |
+
+[docs/ROADMAP.md](docs/ROADMAP.md) is a **pointer index**: one row per item, with ID,
+title and rating. The detail sits beside it, one entry per item, ordered by rating
+and then by ascending ID:
+
+- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) — open bugs, `KI-nn`, severity
+  Critical to Low.
+- [docs/ENHANCEMENTS.md](docs/ENHANCEMENTS.md) — candidates, `ENH-nn`, priority plus
+  a rough effort.
+- [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md) — unsettled questions, `UNK-nn`,
+  kind Decision, Verification or Risk.
+
+An item's whole life is a move, never a copy. It enters ROADMAP and its supporting
+file together; when it ships it is deleted from both and written into CHANGELOG
+`[Unreleased]`. An item dropped rather than built moves to *Decisions taken and not
+taken* below. IDs are assigned in ascending order and never reused. Each file's
+header names its next free ID.
+
+Anchors are explicit lowercase HTML — `<a id="ki-01"></a>` — not heading slugs, so a
+retitled entry keeps its link. Code links from `docs/` are relative, in the form
+`[pipeline.py:53]` pointing at `../src/supernote_export/pipeline.py#L53`.
 
 ## Key invariants — do not break
 
@@ -118,8 +146,9 @@ state. Reasoning and decisions live here.
   the `Transcriber`. So the conversion boundary is exercised with no model and no
   setup. The tests assert that fixture's own properties: a `2026-07-17` output stem,
   whose timestamp name also exercises `naming.py`'s date conversion, and its 3-page
-  count. If you swap the fixture, update `SAMPLE_STEM` and `SAMPLE_PAGES` in
-  `test_pipeline.py` and the `.gitignore` negation.
+  count. If you swap the fixture, update the `.gitignore` negation and the `SAMPLE_NOTE`,
+  `SAMPLE_STEM` and `SAMPLE_PAGES` constants, which are copied across `test_pipeline.py`,
+  `test_convert.py` and `test_vlm_eval.py` — see `ENH-10` for folding them into one place.
 - The model layer has no unit test, by design. An **opt-in eval** covers it
   (`tests/test_vlm_eval.py`, marked `vlm`, deselected by default through `addopts`
   in `pyproject.toml`). Run it with `pytest -m vlm`. It loads the real model, so it
@@ -138,8 +167,6 @@ state. Reasoning and decisions live here.
   second per note, so a slow folder run is usually input I/O, not a bug.
 - `supernotelib.PdfConverter.convert(-1, ...)` renders every page and returns
   `bytes`.
-- **PySN is deliberately not used.** `supernotelib` covers every conversion need, so
-  do not reach for PySN when extending `convert.py`.
 - **The pixel cap is load-bearing, not cosmetic.** A native page renders at
   1920×2560, about 4.9M pixels. Above roughly 2M pixels, Qwen3-VL sometimes emits an
   *empty* generation through an immediate EOS, which silently produces embed-only
@@ -150,7 +177,33 @@ state. Reasoning and decisions live here.
   The default is a **hard-coded conservative constant, not derived from the model**.
   The cliff is undocumented and sits below every capacity the model advertises:
   `size.longest_edge` is 16.7M and the `num_position_embeddings` math implies 2.36M,
-  and both produce empty output. See ROADMAP. The `vlm` eval's non-empty assertion
+  and both produce empty output. See [UNK-02](docs/OPEN_QUESTIONS.md#unk-02).
+  The `vlm` eval's non-empty assertion
   is the re-validation gate, but it can pass by luck at oversized caps, so trust the
   deterministic `note_to_page_images` cap test as the primary guard. The archival
   PDF is rendered separately, at full resolution.
+
+## Decisions taken and not taken
+
+Ideas that were weighed and dropped. They live here so nobody re-raises them, and
+because nothing else in the doc set holds a thing that was never built.
+
+- **PySN was considered and not adopted.** `supernotelib` covers every conversion
+  need, so do not reach for PySN when extending `convert.py`.
+- **Watch mode is declined, not merely unscheduled.** A folder watcher adds a daemon
+  and a debounce problem — a `.note` is rewritten on every device sync — for no gain
+  over running the tool when you want it.
+- **Four review findings were checked and rejected.** From the 2026-08-10 repo
+  review, kept so they are not raised again:
+  - The `max(1, …)` escape in `_downscale_to_max_pixels` is unreachable at
+    Supernote's fixed 1920×2560 page size.
+  - argparse prefix matching on `--page-separators` no longer applies; that flag is
+    gone.
+  - `Image.LANCZOS` is not deprecated in current Pillow.
+  - "`note_to_pdf` has no tests" is wrong for raster, which the pipeline test's
+    `%PDF-` check covers. Only the vector branch is uncovered, which is `ENH-03`.
+
+The **Key invariants** section above already carries the reasoning for three other
+things tried and removed — `HF_HOME` at module scope, the processor's own
+`max_pixels`, and count-only naming. Those stay there; repeating them here would put
+one fact in two places.

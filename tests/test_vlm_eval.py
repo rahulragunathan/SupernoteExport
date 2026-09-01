@@ -14,11 +14,12 @@ Two choices set it apart from the `supernotelib` integration test in
   the dependency is cheap and guaranteed, or expensive and optional.
 - **It asserts tolerant properties, not an exact transcription.** Model output
   drifts between model and mlx-vlm versions, so a golden file would be flaky
-  forever. The real job is to catch the image-resolution cliff (see ROADMAP): above
-  about 2M pixels the model silently returns an empty generation, which showed up as
-  embed-only `.md` files. This eval runs the full pipeline — real render, real pixel
-  cap, real model — and checks that the output is not empty and carries a few
-  clearly printed anchors. That is exactly the signal such a regression erases.
+  forever. The real job is to catch the image-resolution cliff (see UNK-02 in
+  docs/OPEN_QUESTIONS.md): above about 2M pixels the model silently returns an
+  empty generation, which showed up as embed-only `.md` files. This eval runs the
+  full pipeline — real render, real pixel cap, real model — and checks that the
+  output is not empty and carries a few clearly printed anchors. That is exactly
+  the signal such a regression erases.
 """
 
 from __future__ import annotations
