@@ -45,7 +45,7 @@ because their tooling requires it.) Docs split by tense, and one fact lives in
 exactly one file:
 
 | Tense | File | Holds |
-|-------|------|-------|
+| ----- | ---- | ----- |
 | Past | [CHANGELOG.md](CHANGELOG.md) | What shipped, by release. A released section is never edited. |
 | Present | [README.md](README.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), this file | What the code is now. |
 | Future | [docs/ROADMAP.md](docs/ROADMAP.md) + its three supporting files | What has not happened yet. |

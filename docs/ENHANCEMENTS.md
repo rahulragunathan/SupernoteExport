@@ -18,7 +18,7 @@ Entries are ordered by priority, then by ascending ID. Nothing here is scheduled
 Priority is about value, not urgency. Effort is a rough estimate — a session, or days.
 
 | Level | Means |
-|-------|-------|
+| ----- | ----- |
 | **High** | Closes a gap hit during real use. |
 | **Medium** | Worth doing when the area is already open. Removes a sharp edge or a duplication. |
 | **Low** | Tidying. Do it while passing through. |
@@ -26,6 +26,7 @@ Priority is about value, not urgency. Effort is a rough estimate — a session, 
 ---
 
 <a id="enh-01"></a>
+
 ## ENH-01 — Load each notebook once instead of twice per note
 
 **Priority:** Medium · **Effort:** ~2 hours
@@ -80,6 +81,7 @@ fixture, and `tests/test_pipeline.py` asserts the transcriber sees the fixture's
 ---
 
 <a id="enh-02"></a>
+
 ## ENH-02 — Validate options at the library seam, not just in argparse
 
 **Priority:** Medium · **Effort:** ~3 hours
@@ -124,6 +126,7 @@ it is, or restrict it to `0` and reject negatives.
 ---
 
 <a id="enh-03"></a>
+
 ## ENH-03 — Fill the test gaps: failure recovery, CLI exit codes, vector PDF
 
 **Priority:** Medium · **Effort:** ~half a day
@@ -162,6 +165,7 @@ Related: [KI-10](KNOWN_ISSUES.md#ki-10) adds an exit path that this coverage sho
 ---
 
 <a id="enh-04"></a>
+
 ## ENH-04 — Make the `vlm` eval's cache check honest
 
 **Priority:** Medium · **Effort:** ~2 hours
@@ -195,6 +199,7 @@ optional while the fixture is cheap and always there.
 ---
 
 <a id="enh-05"></a>
+
 ## ENH-05 — Optional YAML front matter for Dataview
 
 **Priority:** Medium · **Effort:** ~half a day
@@ -230,6 +235,7 @@ every note, and the embed-only `--no-transcribe` output should stay minimal.
 ---
 
 <a id="enh-06"></a>
+
 ## ENH-06 — Stream page images instead of building them all
 
 **Priority:** Medium · **Effort:** ~3 hours
@@ -270,6 +276,7 @@ Pairs with [ENH-01](#enh-01): one notebook load feeding one lazy page iterator.
 ---
 
 <a id="enh-07"></a>
+
 ## ENH-07 — Skip directories named `*.note` during discovery
 
 **Priority:** Medium · **Effort:** ~1 hour
@@ -306,6 +313,7 @@ lowercase.
 ---
 
 <a id="enh-08"></a>
+
 ## ENH-08 — Model comparison harness over real pages
 
 **Priority:** Low · **Effort:** ~1 day
@@ -337,6 +345,7 @@ precondition for it.
 ---
 
 <a id="enh-09"></a>
+
 ## ENH-09 — Drop the `Operating System :: MacOS` classifier
 
 **Priority:** Low · **Effort:** ~15 minutes
@@ -375,6 +384,7 @@ Related: [KI-05](KNOWN_ISSUES.md#ki-05) is the other packaging-metadata item; bo
 ---
 
 <a id="enh-10"></a>
+
 ## ENH-10 — Share the fixture constants through `tests/conftest.py`
 
 **Priority:** Low · **Effort:** ~1 hour

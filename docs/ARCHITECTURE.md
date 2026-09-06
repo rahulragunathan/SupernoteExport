@@ -18,7 +18,7 @@ the whole batch first — discover, then name — and then loops over the notes.
 each note, `convert.py` renders the same source twice, in two independent ways:
 
 | Path | Renderer | Resolution | Who reads it |
-|------|----------|-----------|--------------|
+| ---- | -------- | ---------- | ------------ |
 | PDF | `supernotelib.PdfConverter` | Full, about 4.9M px per page | Embedded in the `.md` as the archival record |
 | Page images | `supernotelib.ImageConverter` | Capped at `--max-pixels`, default 1.5M | The model, which transcribes them |
 
@@ -36,7 +36,7 @@ Each module does one job. Apart from `pipeline`, none of them knows about the
 others.
 
 | Module | Job |
-|--------|-----|
+| ------ | --- |
 | `cli.py` / `__main__.py` | argparse entry point. Builds a transcriber unless `--no-transcribe`, then calls `pipeline.run()`. |
 | `discover.py` | Turn `--input`, a file or a folder, into sorted `(note_path, relative_subdir)` pairs. The subdir is what mirrors the input tree under `--output`. |
 | `naming.py` | Work out each output name. A `YYYYMMDD_HHMMSS` stem becomes `YYYY-MM-DD`; any other stem is kept as it is. Two notes that want one name in a folder get `-2`/`-3`. |
