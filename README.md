@@ -89,7 +89,7 @@ supernote-export --input note.note --output ./out
 ### Options
 
 | Flag | Default | What it does |
-| --- | --- | --- |
+| ---- | ------- | ------------ |
 | `--input` | *(required)* | A `.note` file, or a folder searched recursively. |
 | `--output` | *(required)* | Output root. The input subfolder tree is mirrored under it. |
 | `--model` | `mlx-community/Qwen3-VL-30B-A3B-Instruct-8bit` | MLX-VLM model used for transcription. |

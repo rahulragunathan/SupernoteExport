@@ -18,6 +18,20 @@ this file existed.
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-09-06 — Markdown lint clean-up
+
+### Fixed
+
+- Every `markdownlint` finding in the doc set: 88 across six files. Table delimiter rows now
+  carry spaces around the pipes, with dash runs sized to their header (`MD060`). Each roadmap
+  entry's `<a id="..."></a>` anchor is separated from its heading by a blank line (`MD022`);
+  flush against the heading, a strict CommonMark reader swallows the heading into the anchor's
+  HTML block. One code span in `KNOWN_ISSUES.md` whose trailing space carried the meaning was
+  reworded rather than trimmed (`MD038`), because the automatic fix would have deleted the
+  point it was making.
+- `README.md` reported no findings but used a third delimiter style. Its one table now matches
+  the rest, so the whole doc set reads the same way.
+
 ## [0.7.3] - 2026-09-01 — Repo-wide external review
 
 ### Added
@@ -257,7 +271,8 @@ was filed rather than hot-fixed, because none had appeared in a real run.
 
 ## Reference
 
-[Unreleased]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.3...main
+[Unreleased]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.4...main
+[0.7.4]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/rahulragunathan/SupernoteExport/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/rahulragunathan/SupernoteExport/compare/4372a6a...v0.7.2
 [0.7.1]: https://github.com/rahulragunathan/SupernoteExport/compare/9572966...4372a6a

@@ -20,7 +20,7 @@ running them, rather than by reading the code alone.
 ## Severity
 
 | Level | Means |
-|-------|-------|
+| ----- | ----- |
 | **Critical** | Loses or corrupts data, or sends wrong information to real recipients. |
 | **High** | Silently produces a wrong result, or reports success without doing the work. |
 | **Medium** | Wrong under conditions the operator can notice or work around. |
@@ -29,6 +29,7 @@ running them, rather than by reading the code alone.
 ---
 
 <a id="ki-01"></a>
+
 ## KI-01 — Output names shift between runs, so a note is skipped or written twice
 
 **Severity:** Critical
@@ -101,6 +102,7 @@ mean what it assumes.
 ---
 
 <a id="ki-02"></a>
+
 ## KI-02 — A stray PDF with no matching `.md` is overwritten without `--overwrite`
 
 **Severity:** Critical
@@ -151,6 +153,7 @@ Related: [KI-01](#ki-01).
 ---
 
 <a id="ki-12"></a>
+
 ## KI-12 — `--no-transcribe --overwrite` destroys existing transcriptions
 
 **Severity:** Critical
@@ -211,6 +214,7 @@ Related: [KI-13](#ki-13) is the same confusion in the other direction.
 ---
 
 <a id="ki-03"></a>
+
 ## KI-03 — A dropped page is indistinguishable from a blank page
 
 **Severity:** High
@@ -275,6 +279,7 @@ numbers used up — must survive, because the headings line up with the PDF.
 ---
 
 <a id="ki-04"></a>
+
 ## KI-04 — A page that hits the token cap is written out as finished
 
 **Severity:** High
@@ -334,6 +339,7 @@ handles.
 ---
 
 <a id="ki-13"></a>
+
 ## KI-13 — An embed-only `.md` counts as converted, so a later transcribing run skips it
 
 **Severity:** High
@@ -388,6 +394,7 @@ already converted — read every `.md` on disk when nothing has changed.
 ---
 
 <a id="ki-05"></a>
+
 ## KI-05 — Installing on Python 3.14 fails halfway instead of being refused
 
 **Severity:** Medium
@@ -428,6 +435,7 @@ not match reality.
 ---
 
 <a id="ki-06"></a>
+
 ## KI-06 — A half-loaded model poisons every later note in the batch
 
 **Severity:** Medium
@@ -480,6 +488,7 @@ Constraint: the MLX imports must stay inside the method. That is a named invaria
 ---
 
 <a id="ki-07"></a>
+
 ## KI-07 — `[`, `]`, `|` and `#` in a name break the Obsidian embed
 
 **Severity:** Medium
@@ -502,8 +511,8 @@ render.
 
 You rename a note on the device to `Status #2`. The output pair is `Status #2.pdf` and
 `Status #2.md`, and the Markdown holds `![[Status #2.pdf]]`. Obsidian reads that as a link to
-the heading `2.pdf` inside a note called `Status `, finds nothing, and shows an unresolved
-link. The PDF sits right beside it, unreachable from the note.
+the heading `2.pdf` inside a note called `Status` plus a trailing space, finds nothing, and
+shows an unresolved link. The PDF sits right beside it, unreachable from the note.
 
 ### Notes for a fix
 
@@ -523,6 +532,7 @@ be planned together.
 ---
 
 <a id="ki-08"></a>
+
 ## KI-08 — A page that really starts with a code fence is mangled
 
 **Severity:** Medium
@@ -584,6 +594,7 @@ chosen rule is pinned against the case it does not solve.
 ---
 
 <a id="ki-09"></a>
+
 ## KI-09 — A missing `[transcribe]` extra fails once per note, after each PDF render
 
 **Severity:** Medium
@@ -626,6 +637,7 @@ supplies its own `Transcriber` must not be forced to have MLX installed.
 ---
 
 <a id="ki-10"></a>
+
 ## KI-10 — A bad `--input` prints a traceback
 
 **Severity:** Medium
@@ -671,6 +683,7 @@ test today, which is part of [ENH-03](ENHANCEMENTS.md#enh-03).
 ---
 
 <a id="ki-14"></a>
+
 ## KI-14 — Outputs are written mode 0600, ignoring the user's umask
 
 **Severity:** Medium
@@ -725,6 +738,7 @@ ever shared.
 ---
 
 <a id="ki-15"></a>
+
 ## KI-15 — A note edited after conversion is never reconverted
 
 **Severity:** Medium
@@ -768,6 +782,7 @@ it is not.
 ---
 
 <a id="ki-16"></a>
+
 ## KI-16 — A failing progress callback is recorded as a conversion failure
 
 **Severity:** Medium
@@ -819,6 +834,7 @@ must not narrow that.
 ---
 
 <a id="ki-17"></a>
+
 ## KI-17 — The writer's atomicity test asserts the opposite of its name
 
 **Severity:** Medium
@@ -868,6 +884,7 @@ test exists and is misleading, which is worse than its absence.
 ---
 
 <a id="ki-11"></a>
+
 ## KI-11 — Indentation on a page's first line is stripped
 
 **Severity:** Low

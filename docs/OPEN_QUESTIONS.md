@@ -21,7 +21,7 @@ There is no open Decision today.
 ## Kind
 
 | Kind | Means |
-|------|-------|
+| ---- | ----- |
 | **Decision** | The code does something defensible, but nobody has chosen whether it is right. Asks for an answer. |
 | **Verification** | The behavior is probably correct and nothing proves it. Asks for a test, or a deliberate acceptance. |
 | **Risk** | Known, understood, accepted for now. Asks for nothing until circumstances change. |
@@ -29,6 +29,7 @@ There is no open Decision today.
 ---
 
 <a id="unk-01"></a>
+
 ## UNK-01 — Do planned names collide under macOS case and Unicode folding?
 
 **Kind:** Verification
@@ -66,6 +67,7 @@ on the key, keeping the original string as the name.
 ---
 
 <a id="unk-02"></a>
+
 ## UNK-02 — Is a 1.5M-pixel cap safe for models other than Qwen3-VL?
 
 **Kind:** Risk
@@ -96,6 +98,7 @@ measurement side of [ENH-08](ENHANCEMENTS.md#enh-08).
 ---
 
 <a id="unk-03"></a>
+
 ## UNK-03 — How stable is the `mlx-vlm` API we call?
 
 **Kind:** Risk
@@ -120,6 +123,7 @@ is opt-in, so the break will show up in a real run first.
 ---
 
 <a id="unk-04"></a>
+
 ## UNK-04 — The `.pdf` and `.md` land as two operations, with no `fsync`
 
 **Kind:** Risk
@@ -157,6 +161,7 @@ worth its cost.
 ---
 
 <a id="unk-05"></a>
+
 ## UNK-05 — Do users know where their weights actually landed?
 
 **Kind:** Risk
@@ -181,6 +186,7 @@ tool-set variable.
 ---
 
 <a id="unk-06"></a>
+
 ## UNK-06 — Can two concurrent runs publish a cross-run PDF and Markdown pair?
 
 **Kind:** Risk

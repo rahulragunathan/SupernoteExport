@@ -4,7 +4,7 @@
 not describe what shipped or how the code works today.
 
 | Looking for | Read |
-|-------------|------|
+| ----------- | ---- |
 | Detail on an open bug | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | Detail on a candidate enhancement | [ENHANCEMENTS.md](ENHANCEMENTS.md) |
 | Detail on an open question | [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) |
@@ -41,7 +41,7 @@ together.
 Most severe first. Severity definitions and full detail in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 | ID | Issue | Severity |
-|----|-------|----------|
+| --- | ----- | -------- |
 | [KI-01](KNOWN_ISSUES.md#ki-01) | Output names shift between runs, so a note is skipped or written twice | Critical |
 | [KI-02](KNOWN_ISSUES.md#ki-02) | A stray PDF with no matching `.md` is overwritten without `--overwrite` | Critical |
 | [KI-12](KNOWN_ISSUES.md#ki-12) | `--no-transcribe --overwrite` destroys existing transcriptions | Critical |
@@ -65,7 +65,7 @@ Most severe first. Severity definitions and full detail in [KNOWN_ISSUES.md](KNO
 Highest priority first. Priority definitions and full detail in [ENHANCEMENTS.md](ENHANCEMENTS.md).
 
 | ID | Enhancement | Priority | Effort |
-|----|-------------|----------|--------|
+| --- | ----------- | -------- | ------ |
 | [ENH-01](ENHANCEMENTS.md#enh-01) | Load each notebook once instead of twice per note | Medium | ~2 hours |
 | [ENH-02](ENHANCEMENTS.md#enh-02) | Validate options at the library seam, not just in argparse | Medium | ~3 hours |
 | [ENH-03](ENHANCEMENTS.md#enh-03) | Fill the test gaps: failure recovery, CLI exit codes, vector PDF | Medium | ~half a day |
@@ -83,7 +83,7 @@ Decisions first, then verification gaps, then accepted risks. Kind definitions a
 reasoning behind each in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md).
 
 | ID | Question | Kind |
-|----|----------|------|
+| --- | -------- | ---- |
 | [UNK-01](OPEN_QUESTIONS.md#unk-01) | Do planned names collide under macOS case and Unicode folding? | Verification |
 | [UNK-02](OPEN_QUESTIONS.md#unk-02) | Is a 1.5M-pixel cap safe for models other than Qwen3-VL? | Risk |
 | [UNK-03](OPEN_QUESTIONS.md#unk-03) | How stable is the `mlx-vlm` API we call? | Risk |
